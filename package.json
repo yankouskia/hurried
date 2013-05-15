@@ -6,10 +6,11 @@
   "repository": "git@github.com:yankouskia/hurried.git",
   "author": "yankouskia <aleksandr.yankovskiy@gmail.com>",
   "license": "MIT",
-  "devDependencies": {
-    "jest": "^24.8.0"
-  },
+  "devDependencies": {},
   "scripts": {
     "test": "jest"
+  },
+  "dependencies": {
+    "jest": "^28.1.0"
   }
 }
