@@ -5,47 +5,67 @@ const {
   isResponseMessage,
 } = require('./helpers');
 
-describe('createRequestMessage', () => {
-  it('one argument', () => {
-    expect(createRequestMessage('functionName', ['param1'])).toMatchSnapshot();
+describe('helpers', () => {
+  const randomFn = Math.random();
+
+  beforeEach(() => {
+    Math.random = jest.fn(() => 'id');
   });
 
-  it('two arguments', () => {
-    expect(createRequestMessage('functionName', ['param1', {}])).toMatchSnapshot();
-  });
-});
-
-describe('createResponseMessage', () => {
-  it('with data', () => {
-    expect(createResponseMessage('functionName', 'data')).toMatchSnapshot();
+  afterEach(() => {
+    Math.random = randomFn;
   });
 
-  it('with error', () => {
-    expect(createResponseMessage('functionName', null, 'error message')).toMatchSnapshot();
-  });
-});
+  describe('createRequestMessage', () => {
+    it('one argument', () => {
+      expect(createRequestMessage('functionName', ['param1'])).toMatchSnapshot();
+    });
 
-describe('isRequestMessage', () => {
-  it('true', () => {
-    expect(isRequestMessage({ functionName: 'fn', params: [] })).toBeTruthy();
-  });
-
-  it('false', () => {
-    expect(isRequestMessage('smth wrong')).toBeFalsy();
-  });
-});
-
-describe('isResponseMessage', () => {
-  it('error', () => {
-    expect(isResponseMessage({ functionName: 'fn', error: 'error occured' })).toBeTruthy();
+    it('two arguments', () => {
+      expect(createRequestMessage('functionName', ['param1', {}])).toMatchSnapshot();
+    });
   });
 
-  it('data', () => {
-    expect(isResponseMessage({ functionName: 'fn', data: 'result' })).toBeTruthy();
+  describe('createResponseMessage', () => {
+    it('empty', () => {
+      expect(createResponseMessage('functionName', 'id')).toMatchSnapshot();
+    });
+
+    it('with data', () => {
+      expect(createResponseMessage('functionName', 'id', 'data')).toMatchSnapshot();
+    });
+
+    it('with error', () => {
+      expect(createResponseMessage('functionName', 'id', null, 'error message')).toMatchSnapshot();
+    });
   });
 
-  it('false', () => {
-    expect(isResponseMessage('smth wrong')).toBeFalsy();
+  describe('isRequestMessage', () => {
+    it('true', () => {
+      expect(isRequestMessage({ functionName: 'fn', id: 'id', params: [] })).toBeTruthy();
+    });
+
+    it('false', () => {
+      expect(isRequestMessage('smth wrong')).toBeFalsy();
+    });
+  });
+
+  describe('isResponseMessage', () => {
+    it('error', () => {
+      expect(isResponseMessage({ functionName: 'fn', id: 'id', error: 'error occured' })).toBeTruthy();
+    });
+
+    it('data', () => {
+      expect(isResponseMessage({ functionName: 'fn', id: 'id', data: 'result' })).toBeTruthy();
+    });
+
+    it('without data and error', () => {
+      expect(isResponseMessage({ functionName: 'fn', id: 'id' })).toBeTruthy();
+    });
+
+    it('false', () => {
+      expect(isResponseMessage('smth wrong')).toBeFalsy();
+    });
   });
 });
 

@@ -1,17 +1,19 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`createRequestMessage one argument 1`] = `
+exports[`helpers createRequestMessage one argument 1`] = `
 Object {
   "functionName": "functionName",
+  "id": "id",
   "params": Array [
     "param1",
   ],
 }
 `;
 
-exports[`createRequestMessage two arguments 1`] = `
+exports[`helpers createRequestMessage two arguments 1`] = `
 Object {
   "functionName": "functionName",
+  "id": "id",
   "params": Array [
     "param1",
     Object {},
@@ -19,18 +21,29 @@ Object {
 }
 `;
 
-exports[`createResponseMessage with data 1`] = `
+exports[`helpers createResponseMessage empty 1`] = `
+Object {
+  "data": undefined,
+  "error": undefined,
+  "functionName": "functionName",
+  "id": "id",
+}
+`;
+
+exports[`helpers createResponseMessage with data 1`] = `
 Object {
   "data": "data",
   "error": undefined,
   "functionName": "functionName",
+  "id": "id",
 }
 `;
 
-exports[`createResponseMessage with error 1`] = `
+exports[`helpers createResponseMessage with error 1`] = `
 Object {
   "data": null,
   "error": "error message",
   "functionName": "functionName",
+  "id": "id",
 }
 `;
