@@ -1,6 +1,6 @@
 {
   "name": "hurried",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Library for parallel execution",
   "main": "./src/index.js",
   "repository": "git@github.com:yankouskia/hurried.git",

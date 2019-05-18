@@ -1,5 +1,7 @@
 [![CircleCI](https://circleci.com/gh/yankouskia/hurried.svg?style=shield)](https://circleci.com/gh/yankouskia/hurried) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/yankouskia/hurried/pulls) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/yankouskia/hurried/blob/master/LICENSE)
 
+[![NPM](https://nodei.co/npm/hurried.png?downloads=true)](https://www.npmjs.com/package/hurried)
+
 # hurried
 
 JavaScript library for ~~concurrent~~ **_parallel_** code execution.
