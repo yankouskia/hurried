@@ -1,0 +1,26 @@
+version: 2.0
+jobs:
+ build:
+   docker:
+     - image: library/node:12.2.0-alpine
+   steps:
+     - checkout
+     - run:
+         name: Install yarn
+         command: |
+           npm config set unsafe-perm true
+           npm i yarn -g
+     - run:
+         name: Install dependencies
+         command: |
+           yarn
+     - run:
+         name: Tests
+         command: |
+           yarn test
+     - run:
+         name: Check examples
+         command: |
+           node --experimental-worker examples/code-string
+           node --experimental-worker examples/performance
+           node --experimental-worker examples/random-iteration
