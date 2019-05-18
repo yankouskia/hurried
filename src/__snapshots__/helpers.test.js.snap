@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`createRequestMessage one argument 1`] = `
+Object {
+  "functionName": "functionName",
+  "params": Array [
+    "param1",
+  ],
+}
+`;
+
+exports[`createRequestMessage two arguments 1`] = `
+Object {
+  "functionName": "functionName",
+  "params": Array [
+    "param1",
+    Object {},
+  ],
+}
+`;
+
+exports[`createResponseMessage with data 1`] = `
+Object {
+  "data": "data",
+  "error": undefined,
+  "functionName": "functionName",
+}
+`;
+
+exports[`createResponseMessage with error 1`] = `
+Object {
+  "data": null,
+  "error": "error message",
+  "functionName": "functionName",
+}
+`;

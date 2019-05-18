@@ -1,0 +1,15 @@
+{
+  "name": "hurried",
+  "version": "0.0.1",
+  "description": "Library for parallel execution",
+  "main": "./src/index.js",
+  "repository": "git@github.com:yankouskia/hurried.git",
+  "author": "yankouskia <aleksandr.yankovskiy@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^24.8.0"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
