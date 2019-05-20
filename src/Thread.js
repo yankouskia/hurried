@@ -1,4 +1,4 @@
-const { Worker } = require('worker_threads');
+const { Worker, isMainThread } = require('worker_threads');
 const { createRequestMessage, isResponseMessage } = require('./helpers');
 
 module.exports.Thread = class Thread {
@@ -30,6 +30,10 @@ module.exports.Thread = class Thread {
     });
 
     return new Thread(worker);
+  }
+
+  static isMainThread() {
+    return isMainThread();
   }
 
   run(name, ...params) {

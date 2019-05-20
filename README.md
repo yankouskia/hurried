@@ -89,6 +89,10 @@ const { Thread } = require('hurried');]
 
 The same as [Node.js Event Emitter setMaxListeners](https://nodejs.org/api/events.html#events_emitter_setmaxlisteners_n) to help finding/preventing memory leaks.
 
+`static Thread.isMainThread(): boolean`
+
+Returns true, if code is not running inside Worker.
+
 `static Thread.fromFile(filename: string, options: OptionsType): Thread`
 
 Creates independent JavaScript execution thread from module.
