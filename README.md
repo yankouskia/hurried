@@ -72,10 +72,6 @@ To use that from main thread:
 ```js
 const { Thread } = require('hurried');]
 
-const threads = Array
-  .from({ length: THREADS_COUNT })
-  .map(_ => Thread.fromFile(path.resolve(__dirname, 'slow.js')));
-
 (async () => {
   const thread = Thread.fromFile(path.resolve(__dirname, 'slow.js'));
   const slowResult = await thread.run('slow', 'param', 1);
