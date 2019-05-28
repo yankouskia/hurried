@@ -70,7 +70,7 @@ makeExecutable(slowFunction, 'slow');
 To use that from main thread:
 
 ```js
-const { Thread } = require('hurried');]
+const { Thread } = require('hurried');
 
 (async () => {
   const thread = Thread.fromFile(path.resolve(__dirname, 'slow.js'));
@@ -97,7 +97,7 @@ Returns true, if code is not running inside Worker.
 
 Creates independent JavaScript execution thread from module.
 
-`static Thread.fromScript(filename: string, options: OptionsType): Thread`
+`static Thread.fromScript(script: string, options: OptionsType): Thread`
 
 Creates independent JavaScript execution thread from code script.
 
@@ -118,7 +118,7 @@ callback is an optional function that is invoked once this operation is known to
 `makeExecutable(fn: Function, name: String): void`
 
 Provides ability to make function callable and executable inside independent JavaScript execution thread from main thread.
-Function should return any serializable value or `Promise`, wchich is resolved with that value.
+Function should return any serializable value or `Promise`, which is resolved with that value.
 
 
 ### OptionsType
@@ -153,7 +153,7 @@ Any JavaScript value that will be cloned and made available as require('worker_t
 There are several examples in projects, which could be helpful to start.
 Example could be found [here](https://github.com/yankouskia/hurried/tree/master/examples)
 
-Running [this example](https://github.com/yankouskia/hurried/tree/master/examples/performance) allows to see how **fast** to run CPU blocking code in seperate threads
+Running [this example](https://github.com/yankouskia/hurried/tree/master/examples/performance) allows to see how **fast** to run CPU blocking code in separate threads
 
 ## Restriction
 
