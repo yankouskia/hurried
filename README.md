@@ -87,7 +87,7 @@ const { Thread } = require('hurried');
 
 `static Thread.setMaxListeners(count: number): void`
 
-The same as [Node.js Event Emitter setMaxListeners](https://nodejs.org/api/events.html#events_emitter_setmaxlisteners_n) to help finding/preventing memory leaks.
+The same as [Node.js Event Emitter setMaxListeners](https://nodejs.org/api/events.html#events_emitter_setmaxlisteners_n) to help finding / preventing memory leaks.
 
 `static Thread.isMainThread(): boolean`
 
