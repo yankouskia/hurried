@@ -11,6 +11,6 @@
     "test": "jest"
   },
   "dependencies": {
-    "jest": "^28.0.1"
+    "jest": "^28.1.0"
   }
 }
