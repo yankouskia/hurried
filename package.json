@@ -1,16 +1,83 @@
 {
   "name": "hurried",
-  "version": "1.1.0",
-  "description": "Library for parallel execution",
-  "main": "./src/index.js",
-  "repository": "git@github.com:yankouskia/hurried.git",
-  "author": "yankouskia <aleksandr.yankovskiy@gmail.com>",
-  "license": "MIT",
-  "devDependencies": {},
-  "scripts": {
-    "test": "jest"
+  "version": "2.0.0",
+  "description": "Modern, type-safe parallel execution for Node.js — workers, pools and parallel iterators with first-class TypeScript support.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
   },
-  "dependencies": {
-    "jest": "^28.1.0"
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf dist coverage",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "example:basic": "tsx examples/basic.ts",
+    "example:pool": "tsx examples/pool.ts",
+    "example:parallel": "tsx examples/parallel.ts",
+    "example:performance": "tsx examples/performance.ts",
+    "example:bus-progress": "tsx examples/bus-progress.ts",
+    "example:bus-pool": "tsx examples/bus-pool.ts",
+    "example:bus-cancel": "tsx examples/bus-cancel.ts",
+    "example:typed-worker": "tsx examples/typed-worker.ts",
+    "prepublishOnly": "npm run clean && npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "keywords": [
+    "parallel",
+    "concurrency",
+    "worker",
+    "worker-threads",
+    "worker-pool",
+    "thread",
+    "thread-pool",
+    "typescript",
+    "cpu",
+    "multithreading",
+    "node"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yankouskia/hurried.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yankouskia/hurried/issues"
+  },
+  "homepage": "https://github.com/yankouskia/hurried#readme",
+  "author": "Aliaksandr Yankouski <alex.yankouski@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@typescript-eslint/eslint-plugin": "^7.7.0",
+    "@typescript-eslint/parser": "^7.7.0",
+    "@vitest/coverage-v8": "^1.5.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
+    "rimraf": "^5.0.5",
+    "tsup": "^8.0.2",
+    "tsx": "^4.7.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.0"
   }
 }

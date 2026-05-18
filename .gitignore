@@ -1,8 +1,21 @@
-# Logs
+# dependencies
+node_modules/
+.npm
+
+# build artifacts
+dist/
+coverage/
+*.tsbuildinfo
+
+# logs
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-node_modules/
-.npm
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
