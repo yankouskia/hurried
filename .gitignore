@@ -14,8 +14,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# editor / OS
+# editor / OS / local tools
 .DS_Store
 .idea/
 .vscode/
 *.swp
+.claude/
