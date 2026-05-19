@@ -25,8 +25,22 @@ jobs:
       - run: npm test
       - run: npm run build
 
+      - name: Check if version is already published
+        id: check
+        run: |
+          PKG=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          if npm view "$PKG@$VER" version > /dev/null 2>&1; then
+            echo "✓ $PKG@$VER is already on npm — skipping publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "→ $PKG@$VER not yet on npm — will publish."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
-        run: npm publish --access public --provenance
+        if: steps.check.outputs.skip != 'true'
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
