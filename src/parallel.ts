@@ -1,12 +1,14 @@
 import type { EventMap } from './bus.js';
+import { TaskAbortedError } from './errors.js';
 import { Pool } from './pool.js';
+import { Thread } from './thread.js';
 import type { ParallelOptions, Task } from './types.js';
 
 /**
  * Run an array of inline functions in parallel, capping concurrency.
  *
- * Each function must be self-contained (no closure variables), since it is serialized
- * into a worker. Returns results in the same order as the inputs.
+ * Each function must be self-contained (no closure variables) — it's serialized into a
+ * worker. Results come back in the same order as the inputs.
  *
  * @example
  * ```ts
@@ -24,40 +26,38 @@ export async function parallel<T>(
   if (tasks.length === 0) return [];
   const { concurrency, signal, timeout } = options;
 
-  // Each task is unique source, so we spin up a tiny pool per task. For high-throughput
-  // identical workloads, prefer `mapParallel` which reuses a single pool.
   const results = new Array<T>(tasks.length);
-  let cursor = 0;
   const limit = Math.max(1, Math.min(concurrency ?? tasks.length, tasks.length));
+  let cursor = 0;
 
-  const workers = Array.from({ length: limit }, async () => {
-    while (true) {
-      if (signal?.aborted) throw new Error('parallel: aborted');
-      const i = cursor++;
-      if (i >= tasks.length) return;
-      const task = tasks[i]!;
-      const pool = new Pool<EventMap, void, T>({
-        size: 1,
-        task: task as Task<void, T>,
-        timeout,
-      });
-      try {
-        results[i] = (await pool.run(undefined as unknown as void, { signal, timeout })) as T;
-      } finally {
-        await pool.terminate();
-      }
+  async function runOne(i: number): Promise<void> {
+    if (signal?.aborted) throw new TaskAbortedError();
+    const thread = Thread.fromFunction(tasks[i]! as Task<void, T>, { timeout });
+    try {
+      const callOpts = signal || timeout ? { signal, timeout } : undefined;
+      results[i] = (await thread.run(undefined as unknown as void, callOpts)) as T;
+    } finally {
+      await thread.terminate();
     }
-  });
+  }
 
-  await Promise.all(workers);
+  await Promise.all(
+    Array.from({ length: limit }, async () => {
+      while (cursor < tasks.length) {
+        const i = cursor++;
+        if (i < tasks.length) await runOne(i);
+      }
+    }),
+  );
+
   return results;
 }
 
 /**
  * Parallel-map an iterable through a single task using a worker pool.
  *
- * Far more efficient than {@link parallel} when running the same operation across many
- * inputs — the pool of workers is reused for every element.
+ * Much more efficient than {@link parallel} when running the same operation across many
+ * inputs — the worker pool is reused for every element.
  *
  * @example
  * ```ts
@@ -79,10 +79,8 @@ export async function mapParallel<TArg, TResult>(
 
   const pool = new Pool<EventMap, TArg, TResult>({ task, size, timeout });
   try {
-    return (await pool.map(
-      items,
-      signal ? { signal, timeout } : timeout ? { timeout } : undefined,
-    )) as TResult[];
+    const callOpts = signal || timeout ? { signal, timeout } : undefined;
+    return (await pool.map(items, callOpts)) as TResult[];
   } finally {
     await pool.terminate();
   }

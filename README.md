@@ -26,6 +26,21 @@
 
 ---
 
+## 30 seconds to your first parallel task
+
+```ts
+import { Thread } from 'hurried';
+
+const thread = Thread.fromFunction((n: number) => n * 2);
+
+await thread.run(21);        // → 42, on a worker thread
+await thread.terminate();
+```
+
+That's it. Three lines, fully typed, CPU work off the event loop, no separate worker file.
+
+Need progress events? Add a typed `Events` map and use the bus:
+
 ```ts
 import { Thread } from 'hurried';
 
@@ -44,7 +59,7 @@ await thread.run(50_000_000);
 await thread.terminate();
 ```
 
-CPU-bound work, off the event loop, with **live, end-to-end-typed progress events**. That's the whole demo.
+**Live, end-to-end-typed progress events across the worker boundary.** That's the whole demo.
 
 ---
 

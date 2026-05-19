@@ -55,23 +55,24 @@ export class Pool<TEvents extends EventMap = EventMap, TArg = unknown, TResult =
     this.maxQueue = maxQueue ?? Number.POSITIVE_INFINITY;
     this.defaultTimeout = timeout;
 
-    this.workers = Array.from({ length: requestedSize }, () => {
-      const t = (Thread.fromFunction as (...a: unknown[]) => Thread<TEvents, TArg, TResult>)(
-        task as unknown as (arg: TArg) => TResult | Promise<TResult>,
-        { ...threadOptions, timeout },
-      );
-      return t;
-    });
+    const spawn = Thread.fromFunction as (
+      fn: typeof task,
+      opts?: typeof threadOptions & { timeout?: number },
+    ) => Thread<TEvents, TArg, TResult>;
+
+    this.workers = Array.from({ length: requestedSize }, () =>
+      spawn(task, { ...threadOptions, timeout }),
+    );
     this.idle = [...this.workers];
 
     this._bus = new Bus<TEvents>((event, payload) => {
-      for (const w of this.workers) {
-        (w.bus().emit as (e: string, p: unknown) => void)(event, payload);
+      for (const worker of this.workers) {
+        (worker.bus().emit as (e: string, p: unknown) => void)(event, payload);
       }
     });
 
-    for (const w of this.workers) {
-      w.bus().__forwardTo(this._bus as Bus<EventMap>);
+    for (const worker of this.workers) {
+      worker.bus().__forwardTo(this._bus as Bus<EventMap>);
     }
   }
 

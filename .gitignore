@@ -25,3 +25,6 @@ yarn-error.log*
 .vscode/
 *.swp
 .claude/
+
+# secrets
+.npmrc
