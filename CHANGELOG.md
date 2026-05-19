@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-05-19
+
+Polish release — no API changes. Drop-in upgrade from 2.0.0.
+
+### Changed
+
+- **`parallel()` simplified** — spawns a `Thread` directly per task instead of
+  building a per-task `Pool` of size one. Same behaviour, two layers fewer.
+- **`Pool` constructor** uses a single typed `spawn` helper instead of inline
+  double-casts at every call site, making the code easier to read and audit.
+- **README** now leads with a 3-line "hello world" demo before introducing the
+  bus, so newcomers see the simplest possible usage first.
+
+### Added
+
+- Docusaurus-powered documentation site at
+  https://yankouskia.github.io/hurried/, with guides, a patterns gallery, a
+  full API reference, a migration guide, and an FAQ.
+- `.npmrc` added to `.gitignore` as a safety net for accidental token commits.
+
 ## [2.0.0] - 2026-05-19
 
 A complete rewrite. Same idea — make parallel JS painless — with a modern, type-safe
@@ -52,5 +72,6 @@ API and production-ready primitives.
 
 Initial public release. See git history for details.
 
+[2.0.1]: https://github.com/yankouskia/hurried/releases/tag/v2.0.1
 [2.0.0]: https://github.com/yankouskia/hurried/releases/tag/v2.0.0
 [1.1.0]: https://github.com/yankouskia/hurried/releases/tag/v1.1.0
