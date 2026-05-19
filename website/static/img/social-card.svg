@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0b0d12"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a5b4fc"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g transform="translate(120,160)" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif">
+    <text x="0" y="120" font-size="180" font-weight="800" fill="url(#accent)" letter-spacing="-0.05em">hurried</text>
+    <text x="0" y="200" font-size="42" font-weight="600" fill="#e2e8f0" letter-spacing="-0.02em">Parallel execution for Node.js — done right.</text>
+    <text x="0" y="270" font-size="28" fill="#94a3b8">Workers · Pools · Parallel iterators · A typed event bus.</text>
+    <g transform="translate(0,340)">
+      <rect x="0" y="0" width="280" height="60" rx="14" fill="#6366f1"/>
+      <text x="140" y="40" font-size="22" font-weight="700" fill="#fff" text-anchor="middle">npm i hurried</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 220" width="640" height="220">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0b0d12"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a5b4fc"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="220" rx="18" fill="url(#bg)"/>
+  <g transform="translate(40,40)" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif">
+    <text x="0" y="40" font-size="56" font-weight="800" fill="url(#accent)" letter-spacing="-0.04em">hurried</text>
+    <text x="0" y="74" font-size="18" font-weight="500" fill="#cbd5e1" letter-spacing="-0.01em">
+      Parallel execution for Node.js — done right.
+    </text>
+    <g transform="translate(0,100)" font-family="'JetBrains Mono', 'SF Mono', Menlo, monospace" font-size="13" fill="#94a3b8">
+      <text x="0" y="0"><tspan fill="#a5b4fc">const</tspan> <tspan fill="#fbbf24">thread</tspan> <tspan>=</tspan> <tspan fill="#a5b4fc">Thread</tspan>.<tspan fill="#fbbf24">fromFunction</tspan>((<tspan fill="#fb7185">bus</tspan>, <tspan fill="#fb7185">n</tspan>) <tspan>=&gt;</tspan> {</text>
+      <text x="0" y="22">  <tspan fill="#fb7185">bus</tspan>.<tspan fill="#fbbf24">emit</tspan>(<tspan fill="#86efac">'progress'</tspan>, { <tspan fill="#a5b4fc">done</tspan>: <tspan fill="#fb7185">n</tspan>, <tspan fill="#a5b4fc">total</tspan>: <tspan fill="#fb7185">n</tspan> });</text>
+      <text x="0" y="44">  <tspan fill="#a5b4fc">return</tspan> <tspan fill="#fb7185">n</tspan>;</text>
+      <text x="0" y="66">});</text>
+    </g>
+  </g>
+</svg>

@@ -41,6 +41,10 @@
     "example:bus-pool": "tsx examples/bus-pool.ts",
     "example:bus-cancel": "tsx examples/bus-cancel.ts",
     "example:typed-worker": "tsx examples/typed-worker.ts",
+    "docs:install": "npm --prefix website install",
+    "docs:dev": "npm --prefix website start",
+    "docs:build": "npm --prefix website run build",
+    "docs:typecheck": "npm --prefix website run typecheck",
     "prepublishOnly": "npm run clean && npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "keywords": [

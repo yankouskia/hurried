@@ -1,18 +1,26 @@
 <div align="center">
 
-# hurried
+<a href="https://yankouskia.github.io/hurried/">
+  <img src="https://raw.githubusercontent.com/yankouskia/hurried/master/website/static/img/hero.svg" alt="hurried — parallel execution for Node.js" width="640" />
+</a>
 
-### Modern, type-safe parallel execution for Node.js — with a typed event bus baked in.
+# **`hurried`**
 
-Workers, pools, parallel iterators, and a `Bus<Events>` for pub/sub across the worker boundary —
-all behind an API that fits on a sticky note.
+### Parallel execution for Node.js, done right.
 
-[![CI](https://github.com/yankouskia/hurried/actions/workflows/ci.yml/badge.svg)](https://github.com/yankouskia/hurried/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/hurried.svg)](https://www.npmjs.com/package/hurried)
-[![npm downloads](https://img.shields.io/npm/dm/hurried.svg)](https://www.npmjs.com/package/hurried)
-[![types](https://img.shields.io/npm/types/hurried.svg)](https://www.npmjs.com/package/hurried)
-[![license](https://img.shields.io/npm/l/hurried.svg)](https://github.com/yankouskia/hurried/blob/master/LICENSE)
-[![coverage](https://img.shields.io/badge/coverage-97%25-brightgreen.svg)](#testing)
+#### Workers · Pools · Parallel iterators · A typed event bus across the worker boundary — all behind an API that fits on a sticky note.
+
+<br />
+
+[![npm version](https://img.shields.io/npm/v/hurried?color=cb3837&label=npm&logo=npm&style=flat-square)](https://www.npmjs.com/package/hurried)
+[![CI](https://img.shields.io/github/actions/workflow/status/yankouskia/hurried/ci.yml?branch=master&label=CI&logo=github&style=flat-square)](https://github.com/yankouskia/hurried/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen?style=flat-square&logo=vitest)](#testing)
+[![Types](https://img.shields.io/npm/types/hurried?style=flat-square&logo=typescript)](https://www.npmjs.com/package/hurried)
+[![Bundle](https://img.shields.io/bundlephobia/minzip/hurried?style=flat-square&label=size)](https://bundlephobia.com/package/hurried)
+[![License](https://img.shields.io/npm/l/hurried?style=flat-square&color=blue)](LICENSE)
+[![Docs](https://img.shields.io/badge/docs-yankouskia.github.io%2Fhurried-4f46e5?style=flat-square&logo=readthedocs)](https://yankouskia.github.io/hurried/)
+
+[**Documentation**](https://yankouskia.github.io/hurried/) · [**Quick start**](#-quick-start) · [**Bus showcase**](#-the-bus--typed-pub-sub-across-threads) · [**Patterns**](#-pattern-showcase) · [**API**](#-api-reference) · [**Examples**](./examples)
 
 </div>
 
@@ -36,66 +44,60 @@ await thread.run(50_000_000);
 await thread.terminate();
 ```
 
-That's it. CPU-bound work, off the event loop, with **live progress events** typed end-to-end.
+CPU-bound work, off the event loop, with **live, end-to-end-typed progress events**. That's the whole demo.
 
 ---
 
-## Table of contents
+## ✨ Why hurried?
 
-- [Why hurried?](#why-hurried)
-- [Install](#install)
-- [60-second tour](#60-second-tour)
-- [The Bus — typed pub/sub across threads](#the-bus--typed-pub-sub-across-threads)
-- [Pattern showcase: solving real TS pain points](#pattern-showcase-solving-real-ts-pain-points)
-  - [Typed RPC across the worker boundary](#1-typed-rpc-across-the-worker-boundary)
-  - [Streaming progress from CPU-bound work](#2-streaming-progress-from-cpu-bound-work)
-  - [Cooperative cancellation (the bus way)](#3-cooperative-cancellation-the-bus-way)
-  - [Aggregated events from many workers](#4-aggregated-events-from-many-workers)
-  - [Worker as a finite state machine](#5-worker-as-a-finite-state-machine)
-- [API reference](#api-reference)
-- [Migration from v1](#migration-from-v1)
-- [Examples](#examples)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [License](#license)
+CPU-bound JavaScript blocks the event loop. The standard Node fix — `worker_threads` — is powerful but unfriendly: a separate file, untyped `postMessage`, no pools, no progress events, no cancellation. **hurried** is a small library that wraps that primitive in an API real codebases actually want to use.
 
-## Why hurried?
+<table>
+  <thead>
+    <tr><th align="left">Feature</th><th>hurried</th><th>worker_threads (raw)</th><th>workerpool / piscina</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><b>Inline-function workers</b></td><td>✅ one call</td><td>❌ separate file</td><td>partial</td></tr>
+    <tr><td><b>Typed RPC <code>await thread.run(arg)</code></b></td><td>✅</td><td>❌ DIY</td><td>partial</td></tr>
+    <tr><td><b>Typed event bus</b> (<code>thread.on('progress', …)</code>)</td><td>✅</td><td>❌ untyped</td><td>rare</td></tr>
+    <tr><td><b>Worker pool</b> with queue + backpressure</td><td>✅ <code>Pool</code></td><td>❌</td><td>✅</td></tr>
+    <tr><td><b>Parallel map / array helpers</b></td><td>✅ <code>mapParallel</code></td><td>❌</td><td>partial</td></tr>
+    <tr><td><b>AbortSignal + per-call timeout</b></td><td>✅</td><td>❌</td><td>partial</td></tr>
+    <tr><td><b>Dual ESM + CJS</b>, zero deps</td><td>✅</td><td>n/a</td><td>varies</td></tr>
+    <tr><td><b>First-class TypeScript</b> (types travel across the worker boundary)</td><td>✅</td><td>❌</td><td>partial</td></tr>
+  </tbody>
+</table>
 
-CPU-bound work in Node.js blocks the event loop. **hurried** makes it trivial to push that work onto worker threads — with a tiny, ergonomic API, zero runtime dependencies, and **end-to-end TypeScript types** that even travel across the worker boundary.
+> 💡 **What makes hurried different?** Every primitive — `Thread`, `Pool`, `parallel`, `mapParallel` — speaks the same tiny API: `run / on / emit / terminate`. Learn it once, scale from a single worker to a 16-CPU pool without rewriting your code.
 
-| Feature | hurried | `worker_threads` (raw) | Other libs |
-| --- | --- | --- | --- |
-| Inline-function workers | ✅ one call | ❌ separate file | partial |
-| Typed RPC `await thread.run(arg)` | ✅ | ❌ build it yourself | partial |
-| Typed event bus `thread.on('progress', ...)` | ✅ | ❌ untyped postMessage | rare |
-| Worker pool with queue + backpressure | ✅ `Pool` | ❌ | ✅ |
-| Parallel map / array helpers | ✅ `mapParallel` | ❌ | partial |
-| `AbortSignal` + per-call `timeout` | ✅ | ❌ | partial |
-| ESM + CJS, zero deps, Node 18+ | ✅ | n/a | varies |
+---
 
-## Install
+## 📦 Install
 
 ```sh
 npm  install hurried
 pnpm add     hurried
 yarn add     hurried
+bun  add     hurried
 ```
 
-> Requires Node.js **18.17+**. No build step needed for consumers — ships compiled ESM + CJS + `.d.ts`.
+> Requires **Node.js 18.17+**. Ships **ESM + CJS + `.d.ts`** — no build step on your side.
 
-## 60-second tour
+---
 
-### 1) Run an inline function in its own thread
+## ⚡ Quick start
+
+### 1) Run a single inline task
 
 ```ts
 import { Thread } from 'hurried';
 
-const thread = Thread.fromFunction((n: number) => n * 2);
-await thread.run(21);            // → 42
-await thread.terminate();
+const t = Thread.fromFunction((n: number) => n * 2);
+await t.run(21);            // → 42
+await t.terminate();
 ```
 
-### 2) Run the same task across a pool of workers
+### 2) Spin up a pool
 
 ```ts
 import { Pool } from 'hurried';
@@ -113,7 +115,7 @@ await pool.map([1e6, 2e6, 3e6, 4e6]);
 await pool.terminate();
 ```
 
-### 3) Skip lifecycle entirely with `mapParallel`
+### 3) Skip lifecycle entirely
 
 ```ts
 import { mapParallel } from 'hurried';
@@ -125,7 +127,9 @@ const squares = await mapParallel(
 );
 ```
 
-## The Bus — typed pub/sub across threads
+---
+
+## 🚌 The Bus — typed pub/sub across threads
 
 > The feature you've always wished `worker_threads` had: send strongly-typed events both ways with one shared contract.
 
@@ -133,11 +137,11 @@ const squares = await mapParallel(
 type Events = {
   progress: { done: number; total: number };
   log: string;
-  cancel: void;
+  cancel: void;                                    // void events → no payload arg
 };
 
 const thread = Thread.fromFunction<Events, number, number>((bus, n) => {
-  bus.on('cancel', () => { /* stop early */ });
+  bus.on('cancel', () => { /* gracefully stop */ });
 
   for (let i = 0; i < n; i++) {
     bus.emit('progress', { done: i, total: n });
@@ -149,20 +153,21 @@ const thread = Thread.fromFunction<Events, number, number>((bus, n) => {
 thread.on('progress', (p) => render(p.done / p.total));
 thread.on('log',      (msg) => console.log(msg));
 
-thread.emit('cancel');              // void event → no payload arg required
+thread.emit('cancel');
 ```
 
-**One event map, two endpoints.** Both `thread.on` and `bus.on` (inside the worker) are typed against `Events` — payloads, event names, everything. Rename a field; both sides break at compile time.
+**One event map, two endpoints.** Both `thread.on(...)` on the main side and `bus.on(...)` inside the worker are typed against the same `Events`. Rename a field; both sides break at compile time.
 
-**Just three methods.** `on(event, listener)` returns an `Unsubscribe` function; pair it with `emit()` and (optionally) `once()` and you have the entire API.
+**Five methods, total surface.** `emit / on / once / off / waitFor` — and `on()` returns its own unsubscribe function, so cleanup is one variable.
 
-### File-based workers
+<details>
+<summary><b>File-based workers (recommended for non-trivial logic)</b></summary>
 
 ```ts
 // worker.ts
 import { defineWorker, workerBus } from 'hurried';
 
-type Events = { progress: { done: number; total: number } };
+export type Events = { progress: { done: number; total: number } };
 const bus = workerBus<Events>();
 
 export default defineWorker({
@@ -173,7 +178,9 @@ export default defineWorker({
     return items.length;
   },
 });
+```
 
+```ts
 // main.ts
 import { Thread } from 'hurried';
 import type { Events } from './worker.ts';
@@ -183,7 +190,10 @@ thread.on('progress', (p) => console.log(p));
 const count = await thread.run('process', ['a', 'b', 'c']);
 ```
 
-### Pools — aggregated, broadcast, still typed
+</details>
+
+<details>
+<summary><b>Pools — events aggregated, broadcasts unified</b></summary>
 
 ```ts
 const pool = new Pool<Events, number, number>({
@@ -198,15 +208,15 @@ pool.on('progress', (p) => console.log(p));   // events from ANY worker
 pool.emit('cancel');                           // broadcasts to ALL workers
 ```
 
-## Pattern showcase: solving real TS pain points
+</details>
 
-Five patterns that are painful with raw `worker_threads` and one-liners with hurried.
+---
 
-### 1) Typed RPC across the worker boundary
+## 🎯 Pattern showcase
 
-**The problem.** `postMessage` accepts `any`. Type drift between the parent and the worker is a constant low-grade bug source.
+Five real TypeScript pain points, each painful with raw `worker_threads` and a one-liner with hurried.
 
-**The hurried way.**
+### 1. Typed RPC across the worker boundary
 
 ```ts
 // worker.ts
@@ -215,8 +225,8 @@ import { defineWorker } from 'hurried';
 export const handlers = defineWorker({
   add: (a: number, b: number) => a + b,
   greet: (name: string) => `Hello, ${name}!`,
-  hash: async (input: string) => (await import('node:crypto'))
-    .createHash('sha256').update(input).digest('hex'),
+  hash: async (input: string) =>
+    (await import('node:crypto')).createHash('sha256').update(input).digest('hex'),
 });
 
 export type Handlers = typeof handlers;
@@ -228,17 +238,13 @@ import { Thread } from 'hurried';
 import type { Handlers } from './worker.ts';
 
 const thread = Thread.fromFile(new URL('./worker.js', import.meta.url));
-const sum = await thread.run('add', 2, 5);                 // returns Promise<number>
-const greeting = await thread.run('greet', 'world');       // typed return
+await thread.run('add', 2, 5);          // Promise<number>
+await thread.run('greet', 'world');     // Promise<string>
 ```
 
-One `defineWorker` call wires up a typed handler map, and the worker file becomes the single source of truth — its types are exported and imported back into the main thread.
+Worker file = single source of truth. Export its handler-map type; import it back in main.
 
-### 2) Streaming progress from CPU-bound work
-
-**The problem.** Tight loops block the event loop; you can't `await` your way out. Spinning up a worker just to be silent for 30 seconds isn't great UX either.
-
-**The hurried way.**
+### 2. Streaming progress from CPU-bound work
 
 ```ts
 type Events = { progress: { done: number; total: number; pctText: string } };
@@ -254,26 +260,16 @@ const thread = Thread.fromFunction<Events, number, number>((bus, total) => {
   return total;
 });
 
-thread.on('progress', (p) =>
-  process.stdout.write(`\rprogress: ${p.pctText}`),
-);
-
+thread.on('progress', (p) => process.stdout.write(`\r${p.pctText}`));
 await thread.run(50_000_000);
 ```
 
-Live progress bar, fully typed, zero polling. See [`examples/bus-progress.ts`](./examples/bus-progress.ts).
+Live progress bar, fully typed, no polling.
 
-### 3) Cooperative cancellation (the bus way)
-
-**The problem.** A long-running worker can't react to messages while it's inside a synchronous loop — `parentPort.on('message', ...)` only fires when the event loop drains.
-
-**The hurried way.** Use the bus to signal intent, and yield to the event loop on a coarse cadence:
+### 3. Cooperative cancellation through the bus
 
 ```ts
-type Events = {
-  cancel: void;
-  cancelled: { atIteration: number };
-};
+type Events = { cancel: void; cancelled: { atIteration: number } };
 
 const thread = Thread.fromFunction<Events, number, 'completed' | 'cancelled'>(
   async (bus, n) => {
@@ -282,33 +278,25 @@ const thread = Thread.fromFunction<Events, number, 'completed' | 'cancelled'>(
 
     const chunk = 5_000_000;
     for (let i = 0; i < n; i += chunk) {
-      if (stop) {
-        bus.emit('cancelled', { atIteration: i });
-        return 'cancelled';
-      }
-      for (let j = 0; j < chunk && i + j < n; j++) Math.sqrt(i + j);
-      await new Promise((r) => setImmediate(r)); // drain incoming messages
+      if (stop) { bus.emit('cancelled', { atIteration: i }); return 'cancelled'; }
+      for (let j = 0; j < chunk; j++) Math.sqrt(i + j);
+      await new Promise((r) => setImmediate(r));    // drain pending messages
     }
     return 'completed';
   },
 );
 
 setTimeout(() => thread.emit('cancel'), 200);
-const status = await thread.run(2_000_000_000);
 ```
 
-The same pattern works for pause/resume, throttling, anything you'd usually reach for `AbortSignal` for. ([`examples/bus-cancel.ts`](./examples/bus-cancel.ts))
+> 💬 Pro tip: Node workers won't process incoming messages while inside a tight sync loop. `await setImmediate` is the cooperative yield that lets cancellation actually arrive.
 
-### 4) Aggregated events from many workers
-
-**The problem.** You have N workers running the same task; you want a *single* event stream in the parent, with no manual fan-in code.
-
-**The hurried way.** The `Pool` exposes the same `on / emit` surface as `Thread`, automatically aggregating events from every worker and broadcasting outgoing events to all:
+### 4. Aggregated events from many workers
 
 ```ts
 type Events = {
   progress: { workerLabel: string; done: number; total: number };
-  done: { workerLabel: string };
+  done:     { workerLabel: string };
 };
 
 const pool = new Pool<Events, { id: number; size: number }, number>({
@@ -316,9 +304,8 @@ const pool = new Pool<Events, { id: number; size: number }, number>({
   task: (bus, { id, size }) => {
     const workerLabel = `worker-${id}`;
     for (let i = 0; i < size; i++) {
-      if (i % Math.floor(size / 4) === 0) {
+      if (i % Math.floor(size / 4) === 0)
         bus.emit('progress', { workerLabel, done: i, total: size });
-      }
     }
     bus.emit('done', { workerLabel });
     return size;
@@ -327,17 +314,9 @@ const pool = new Pool<Events, { id: number; size: number }, number>({
 
 pool.on('progress', (p) => console.log(`${p.workerLabel}: ${p.done}/${p.total}`));
 pool.on('done',     (d) => console.log(`${d.workerLabel} ✓`));
-
-await pool.map([{ id: 1, size: 1e7 }, { id: 2, size: 1e7 }, /* ... */]);
 ```
 
-See [`examples/bus-pool.ts`](./examples/bus-pool.ts).
-
-### 5) Worker as a finite state machine
-
-**The problem.** Workers that change phases — initializing, downloading, processing, finalizing — need a clean way to broadcast state transitions without baking custom protocols.
-
-**The hurried way.** Define `state` as a discriminated union and let the bus carry it:
+### 5. Worker as a finite state machine
 
 ```ts
 type WorkerState =
@@ -352,78 +331,59 @@ type Events = { state: WorkerState };
 const thread = Thread.fromFunction<Events, string, number>(async (bus, url) => {
   bus.emit('state', { phase: 'init' });
   bus.emit('state', { phase: 'downloading', url });
-
-  // ... heavy work ...
-
   bus.emit('state', { phase: 'processing', chunk: 1 });
   bus.emit('state', { phase: 'done', bytes: 1234 });
   return 1234;
 });
 
 thread.on('state', (s) => {
-  // TypeScript narrows the union per branch:
   switch (s.phase) {
-    case 'downloading': console.log(`↓ ${s.url}`); break;
-    case 'processing':  console.log(`⚙  chunk ${s.chunk}`); break;
+    case 'downloading': console.log(`↓ ${s.url}`); break;       // s narrows here
+    case 'processing':  console.log(`⚙ chunk ${s.chunk}`); break;
     case 'done':        console.log(`✓ ${s.bytes} bytes`); break;
     case 'error':       console.error(s.message); break;
   }
 });
 ```
 
-## API reference
+TypeScript narrows the union per branch — no `as any`, no manual type guards.
+
+---
+
+## 📚 API reference
+
+> Full interactive API reference lives at the [**docs site**](https://yankouskia.github.io/hurried/). Below is the cheat sheet.
 
 ### `Thread`
 
 | Method | Description |
 | --- | --- |
-| `Thread.fromFunction(task, options?)` | Spawn a worker around a self-contained inline function. Declare two parameters `(bus, arg)` to receive a typed {@link Bus}. |
-| `Thread.fromFile(filename, options?)` | Spawn a worker from a module file (use `defineWorker` inside). |
-| `Thread.fromScript(script, options?)` | Spawn a worker from a CommonJS code string. |
+| `Thread.fromFunction(task, options?)` | Spawn from inline function. Declare two params `(bus, arg)` to receive a typed `Bus`. |
+| `Thread.fromFile(filename, options?)` | Spawn from a module file (pair with `defineWorker` / `workerBus`). |
+| `Thread.fromScript(script, options?)` | Spawn from a raw code string. |
 | `thread.run(arg, options?)` | Invoke the default inline task. |
-| `thread.run(name, ...args)` | Invoke a named handler registered with `defineWorker` / `makeExecutable`. |
-| `thread.on(event, listener)` | Listen for an event from the worker; returns an unsubscribe function. |
-| `thread.once(event, listener)` | One-shot listener. |
-| `thread.off(event, listener)` | Remove a listener. |
-| `thread.emit(event, payload?)` | Send an event to the worker (`payload` omitted for `void` events). |
-| `thread.bus()` | Direct access to the typed `Bus<TEvents>`. |
+| `thread.run(name, ...args)` | Invoke a named handler. |
+| `thread.on / once / off / emit / bus()` | Typed event API. |
 | `thread.terminate()` | Stop the worker; pending calls reject with `TerminatedError`. |
-| `thread.isTerminated` / `thread.pendingCount` | Inspection. |
 
 ### `Pool`
 
 | Method | Description |
 | --- | --- |
-| `new Pool({ task, size?, maxQueue?, timeout?, ...threadOptions })` | Fixed-size pool of workers running the same inline task. |
-| `pool.run(arg, options?)` / `pool.map(args, options?)` | Run one or many tasks. |
-| `pool.on/once/off/emit/bus` | Aggregated event bus (events from any worker; emit broadcasts to all). |
-| `pool.size` / `pool.idleCount` / `pool.queueLength` / `pool.isTerminated` | Inspection. |
-| `pool.terminate()` | Tear down workers; reject queued tasks. |
+| `new Pool({ task, size?, maxQueue?, timeout?, … })` | Fixed-size pool of workers running the same task. |
+| `pool.run / pool.map` | Run one or many. Inputs preserve order. |
+| `pool.on / emit / bus()` | Aggregated event bus across workers. |
+| `pool.size / idleCount / queueLength` | Inspection. |
+| `pool.terminate()` | Reject queued tasks, tear down workers. |
 
-### `parallel(tasks, options?)` & `mapParallel(items, task, options?)`
+### Helpers
 
-Run an array of inline functions concurrently (`parallel`) or map an iterable through a single task using a pool (`mapParallel`). Both honor `{ concurrency, timeout, signal }`.
-
-### `defineWorker` & `makeExecutable`
-
-Register typed handlers inside a worker module. `defineWorker(map)` is the modern ergonomic form; `makeExecutable(fn, name)` is the v1-compatible single-handler version.
-
-### `workerBus<TEvents>()`
-
-Inside a worker module, returns the typed `Bus<TEvents>` for that worker. Call it once and share the result — it's a singleton per worker.
-
-### `Bus<TEvents>`
-
-The class behind every `on / emit` surface in hurried.
-
-| Method | Description |
+| Function | Description |
 | --- | --- |
-| `bus.emit(event, payload?)` | Send to the other side (no-op if standalone). |
-| `bus.on(event, listener)` | Subscribe; returns an unsubscribe function. |
-| `bus.once(event, listener)` | One-shot subscribe. |
-| `bus.off(event, listener)` | Manually unsubscribe. |
-| `bus.waitFor(event, { signal? })` | Resolves on the next event (or rejects on abort). |
-| `bus.listenerCount(event?)` / `bus.clear()` | Inspection / teardown. |
+| `parallel(tasks, options?)` | Run an array of inline functions concurrently. |
+| `mapParallel(items, task, options?)` | Parallel-map an iterable through one task using a pool. |
+| `defineWorker(handlers)` | Register a typed handler map inside a worker file. |
+| `workerBus<Events>()` | Get the typed `Bus<Events>` inside a worker. |
 
 ### Options
 
@@ -431,24 +391,50 @@ The class behind every `on / emit` surface in hurried.
 interface RunOptions {
   timeout?: number;                 // per-call timeout (ms)
   signal?: AbortSignal;             // cancellation
-  transferList?: TransferListItem[];// zero-copy transfers (ArrayBuffer, MessagePort, ...)
+  transferList?: TransferListItem[];// zero-copy transfers
 }
 ```
 
-`ThreadOptions` extends Node's `WorkerOptions` (`env`, `execArgv`, `stdin`/`stdout`/`stderr`, `workerData`, `resourceLimits`, `name`) and adds a `timeout` default.
+`ThreadOptions` extends Node's `WorkerOptions` (`env`, `execArgv`, `stdin`/`out`/`err`, `workerData`, `resourceLimits`, `name`) and adds a `timeout` default.
 
 ### Errors
 
-All errors extend `HurriedError`:
+All errors extend `HurriedError`: `TaskError` (handler threw — original in `.cause`), `TaskTimeoutError`, `TaskAbortedError`, `TerminatedError`.
 
-| Class                | When                                                       |
-| -------------------- | ---------------------------------------------------------- |
-| `TaskError`          | Handler threw or rejected — original error in `.cause`     |
-| `TaskTimeoutError`   | A `timeout` was reached                                    |
-| `TaskAbortedError`   | An `AbortSignal` fired                                     |
-| `TerminatedError`    | The worker was terminated while the call was in flight     |
+---
 
-## Migration from v1
+## 🧪 Testing
+
+- **Vitest** with v8 coverage. CI enforces ≥ 50% thresholds; the suite ships at **~97% statements**.
+- **95 tests** across 11 files: bus, runtime, protocol, thread, pool, parallel helpers, legacy handler API.
+- **Matrix CI:** Node 18 / 20 / 22 × Ubuntu / macOS / Windows × lint + typecheck + format + test + coverage + build + examples.
+
+```sh
+npm test               # run once
+npm run test:watch     # watch mode
+npm run test:coverage  # full report
+```
+
+---
+
+## 🤝 Contributing
+
+```sh
+npm install
+npm run lint           # eslint flat config
+npm run typecheck      # tsc --noEmit
+npm test               # vitest
+npm run build          # tsup → dist/ (ESM + CJS + .d.ts)
+
+npm run docs:dev       # local docs preview
+npm run docs:build     # static site → website/build
+```
+
+PRs welcome. Code is TypeScript-first with no shortcuts — every public surface is fully typed, and the test suite enforces both behavior and coverage.
+
+---
+
+## 🗺 Migration from v1
 
 ```diff
 - const { Thread, makeExecutable } = require('hurried');
@@ -459,53 +445,21 @@ All errors extend `HurriedError`:
 + export default defineWorker({ slow });
 ```
 
-**Highlights**
-
-- ESM-first build; CJS still works via the `require` export.
-- `Thread.fromFunction` replaces ad-hoc `fromScript` for inline tasks and is fully type-safe.
-- `Pool`, `parallel`, `mapParallel` cover the common parallel-map case without lifecycle code.
+- **ESM-first** build; CJS still works via the `require` export.
+- New `Thread.fromFunction` replaces ad-hoc `fromScript` for inline tasks — fully type-safe.
+- New `Pool` / `parallel` / `mapParallel` cover the common parallel-map case.
 - New `Bus<Events>` — typed pub/sub across the worker boundary.
-- `AbortSignal` and per-call `timeout` are first-class.
-- The legacy `makeExecutable` still works, so v1 worker files don't need to change.
+- `AbortSignal` and per-call `timeout` are first-class everywhere.
+- Legacy `makeExecutable` still works, so v1 worker files don't need to change.
 
-## Examples
+---
 
-Every script is runnable with `npm run example:<name>`.
+## 📜 License
 
-| Script | What it shows |
-| --- | --- |
-| [`basic`](./examples/basic.ts)             | Single `Thread.fromFunction` |
-| [`pool`](./examples/pool.ts)               | `Pool.map` for parallel sums |
-| [`parallel`](./examples/parallel.ts)       | `parallel()` and `mapParallel()` helpers |
-| [`performance`](./examples/performance.ts) | Serial vs. parallel benchmark |
-| [`bus-progress`](./examples/bus-progress.ts) | Streaming progress events with `bus` |
-| [`bus-cancel`](./examples/bus-cancel.ts)   | Cooperative cancellation via the bus |
-| [`bus-pool`](./examples/bus-pool.ts)       | Aggregated events from a worker pool |
-| [`typed-worker`](./examples/typed-worker.ts) | `defineWorker` + `workerBus` for typed RPC + events |
+[MIT](./LICENSE) © [Alex Yankouski](https://github.com/yankouskia)
 
-## Testing
+<div align="center">
 
-- **Vitest** with v8 coverage. CI enforces 50%+ thresholds; the suite ships at **~97% statements**.
-- **95 tests** across 11 files cover the bus, runtime, protocol, thread, pool, parallel helpers, and the legacy handler API.
+<sub>Built with ❤️ for the JS/TS ecosystem · ⭐ <a href="https://github.com/yankouskia/hurried">Star us on GitHub</a> if hurried makes your code faster.</sub>
 
-```sh
-npm test               # run once
-npm run test:watch     # watch mode
-npm run test:coverage  # full coverage report
-```
-
-## Contributing
-
-```sh
-npm install
-npm run lint        # eslint (flat config)
-npm run typecheck   # tsc --noEmit
-npm test            # vitest
-npm run build       # tsup → dist/ (ESM + CJS + .d.ts)
-```
-
-CI runs lint, typecheck, format check, the full matrix (Node 18/20/22 × Ubuntu/macOS/Windows), coverage, build, and the example scripts. PRs welcome.
-
-## License
-
-[MIT](./LICENSE) © Aliaksandr Yankouski
+</div>

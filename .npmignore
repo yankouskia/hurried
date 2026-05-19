@@ -1,6 +1,7 @@
 src/
 tests/
 examples/
+website/
 coverage/
 .github/
 .editorconfig
