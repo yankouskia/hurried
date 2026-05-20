@@ -1,6 +1,6 @@
 {
   "name": "hurried",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Modern, type-safe parallel execution for Node.js — workers, pools and parallel iterators with first-class TypeScript support.",
   "type": "module",
   "main": "./dist/index.cjs",

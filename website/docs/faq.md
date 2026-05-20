@@ -66,4 +66,4 @@ About **20 kB** minified. Zero runtime dependencies.
 
 ### What's the latest version?
 
-**2.0.1** on [npm](https://www.npmjs.com/package/hurried). See the [full changelog](https://github.com/yankouskia/hurried/blob/master/CHANGELOG.md).
+**2.0.2** on [npm](https://www.npmjs.com/package/hurried). See the [full changelog](https://github.com/yankouskia/hurried/blob/master/CHANGELOG.md).
