@@ -58,7 +58,7 @@ About **20 kB** minified. Zero runtime dependencies.
 
 ### What's the Node version requirement?
 
-**Node 18.17+** for `availableParallelism()` and modern `AbortSignal` semantics. The CI matrix tests Node 18, 20, and 22 on Ubuntu, macOS, and Windows.
+**Node 18.17+** for `availableParallelism()` and modern `AbortSignal` semantics. The CI matrix tests Node 18, 20, 22, and 24 on Ubuntu, macOS, and Windows.
 
 ### Where do I report bugs?
 

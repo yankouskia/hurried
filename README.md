@@ -422,7 +422,7 @@ All errors extend `HurriedError`: `TaskError` (handler threw — original in `.c
 
 - **Vitest** with v8 coverage. CI enforces ≥ 50% thresholds; the suite ships at **~97% statements**.
 - **95 tests** across 11 files: bus, runtime, protocol, thread, pool, parallel helpers, legacy handler API.
-- **Matrix CI:** Node 18 / 20 / 22 × Ubuntu / macOS / Windows × lint + typecheck + format + test + coverage + build + examples.
+- **Matrix CI:** Node 18 / 20 / 22 / 24 × Ubuntu / macOS / Windows × lint + typecheck + format + test + coverage + build + examples.
 
 ```sh
 npm test               # run once
