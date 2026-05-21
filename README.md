@@ -14,7 +14,7 @@
 
 [![npm version](https://img.shields.io/npm/v/hurried?color=cb3837&label=npm&logo=npm&style=flat-square)](https://www.npmjs.com/package/hurried)
 [![CI](https://img.shields.io/github/actions/workflow/status/yankouskia/hurried/ci.yml?branch=master&label=CI&logo=github&style=flat-square)](https://github.com/yankouskia/hurried/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen?style=flat-square&logo=vitest)](#testing)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen?style=flat-square&logo=vitest)](#testing)
 [![Types](https://img.shields.io/npm/types/hurried?style=flat-square&logo=typescript)](https://www.npmjs.com/package/hurried)
 [![Bundle](https://img.shields.io/bundlephobia/minzip/hurried?style=flat-square&label=size)](https://bundlephobia.com/package/hurried)
 [![License](https://img.shields.io/npm/l/hurried?style=flat-square&color=blue)](LICENSE)
@@ -420,7 +420,7 @@ All errors extend `HurriedError`: `TaskError` (handler threw — original in `.c
 
 ## 🧪 Testing
 
-- **Vitest** with v8 coverage. CI enforces ≥ 50% thresholds; the suite ships at **~97% statements**.
+- **Vitest** with v8 coverage. CI enforces ≥ 50% thresholds; the suite ships at **~95% statements**.
 - **95 tests** across 11 files: bus, runtime, protocol, thread, pool, parallel helpers, legacy handler API.
 - **Matrix CI:** Node 18 / 20 / 22 / 24 × Ubuntu / macOS / Windows × lint + typecheck + format + test + coverage + build + examples.
 
