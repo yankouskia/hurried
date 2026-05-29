@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-05-23
+
+Feature release — fully backward compatible. Drop-in upgrade from 2.0.2.
+
+### Added
+
+- **Streaming parallel iteration.** Two new ways to consume parallel results as
+  an async iterator instead of one buffered array:
+  - `mapParallelStream(items, task, options?)` — the streaming counterpart to
+    `mapParallel`; spins up a pool and tears it down for you (including on an
+    early `break`).
+  - `Pool.stream(items, options?)` — stream through an existing, reusable pool.
+
+  Both pull the source **lazily** (it can be an array, a generator, or any
+  `AsyncIterable` — even infinite) and keep at most `concurrency` items
+  outstanding, so memory stays flat regardless of input size. Results come back
+  **in input order** by default, or **as-completed** with `{ ordered: false }`
+  for the lowest latency to the first result. They compose with `timeout` and
+  `signal`, and breaking out of the loop early closes the source and releases
+  workers. New `StreamOptions` and `StreamInput` types are exported.
+
 ## [2.0.2] - 2026-05-20
 
 Maintenance release — no API or runtime changes. Drop-in upgrade from 2.0.1.
@@ -90,6 +111,7 @@ API and production-ready primitives.
 
 Initial public release. See git history for details.
 
+[2.1.0]: https://github.com/yankouskia/hurried/releases/tag/v2.1.0
 [2.0.2]: https://github.com/yankouskia/hurried/releases/tag/v2.0.2
 [2.0.1]: https://github.com/yankouskia/hurried/releases/tag/v2.0.1
 [2.0.0]: https://github.com/yankouskia/hurried/releases/tag/v2.0.0
