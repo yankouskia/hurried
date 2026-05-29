@@ -78,6 +78,7 @@ CPU-bound JavaScript blocks the event loop. The standard Node fix — `worker_th
     <tr><td><b>Worker pool</b> with queue + backpressure</td><td>✅ <code>Pool</code></td><td>❌</td><td>✅</td></tr>
     <tr><td><b>Parallel map / array helpers</b></td><td>✅ <code>mapParallel</code></td><td>❌</td><td>partial</td></tr>
     <tr><td><b>Streaming async-iterator results</b> (ordered or as-completed)</td><td>✅ <code>mapParallelStream</code></td><td>❌</td><td>partial</td></tr>
+    <tr><td><b>Retry + exponential backoff</b> (per call, every primitive)</td><td>✅ <code>{ retry: 3 }</code></td><td>❌</td><td>❌</td></tr>
     <tr><td><b>AbortSignal + per-call timeout</b></td><td>✅</td><td>❌</td><td>partial</td></tr>
     <tr><td><b>Dual ESM + CJS</b>, zero deps</td><td>✅</td><td>n/a</td><td>varies</td></tr>
     <tr><td><b>First-class TypeScript</b> (types travel across the worker boundary)</td><td>✅</td><td>❌</td><td>partial</td></tr>
@@ -158,6 +159,19 @@ for await (const parsed of mapParallelStream(readLines('huge.log'), parseLine, {
 ```
 
 A true parallel **iterator**: bounded concurrency, backpressure, and clean teardown on early `break`. Already have a `Pool`? Stream through it with `pool.stream(items)`.
+
+### 5) Retry flaky work, with backoff
+
+```ts
+// One option, on any primitive. `retry: 3` = up to 4 attempts.
+await pool.run(input, {
+  retry: { retries: 3, minDelay: 100, factor: 2, jitter: true },
+});
+
+await mapParallel(urls, fetchAndParse, { retry: 3, concurrency: 8 });
+```
+
+Exponential backoff, jitter, a custom `shouldRetry`/`onRetry`, and full `AbortSignal` support — cancellation interrupts even a pending backoff. Abort and teardown errors are never retried.
 
 ---
 
@@ -423,9 +437,10 @@ TypeScript narrows the union per branch — no `as any`, no manual type guards.
 
 ```ts
 interface RunOptions {
-  timeout?: number;                 // per-call timeout (ms)
-  signal?: AbortSignal;             // cancellation
+  timeout?: number;                 // per-call timeout (ms), applied per attempt
+  signal?: AbortSignal;             // cancellation (interrupts pending backoff too)
   transferList?: TransferListItem[];// zero-copy transfers
+  retry?: number | RetryOptions;    // retry on failure, with optional backoff
 }
 ```
 
@@ -440,7 +455,7 @@ All errors extend `HurriedError`: `TaskError` (handler threw — original in `.c
 ## 🧪 Testing
 
 - **Vitest** with v8 coverage. CI enforces ≥ 50% thresholds; the suite ships at **~95% statements**.
-- **123 tests** across 12 files: bus, runtime, protocol, thread, pool, parallel & streaming helpers, legacy handler API.
+- **142 tests** across 13 files: bus, runtime, protocol, thread, pool, parallel & streaming helpers, retry/backoff, legacy handler API.
 - **Matrix CI:** Node 18 / 20 / 22 / 24 × Ubuntu / macOS / Windows × lint + typecheck + format + test + coverage + build + examples.
 
 ```sh

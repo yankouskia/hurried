@@ -1,5 +1,6 @@
 import type { TransferListItem, WorkerOptions as NodeWorkerOptions } from 'node:worker_threads';
 import type { Bus, EventMap } from './bus.js';
+import type { RetryInput } from './retry.js';
 
 /** Subset of Node's WorkerOptions safe to expose, plus our own additions. */
 export interface ThreadOptions extends Pick<
@@ -17,6 +18,12 @@ export interface RunOptions {
   signal?: AbortSignal;
   /** Transferable objects passed via structured clone fast-path. */
   transferList?: ReadonlyArray<TransferListItem>;
+  /**
+   * Retry the call on failure. A number is the count of extra attempts; an
+   * object configures backoff. Cancellation and teardown errors are never
+   * retried. The per-call `timeout` applies to each attempt.
+   */
+  retry?: RetryInput;
 }
 
 export interface PoolOptions<
@@ -44,6 +51,8 @@ export interface ParallelOptions {
   timeout?: number;
   /** AbortSignal to cancel all pending tasks. */
   signal?: AbortSignal;
+  /** Retry each task on failure. A number of extra attempts, or a backoff config. */
+  retry?: RetryInput;
 }
 
 export interface StreamOptions extends ParallelOptions {

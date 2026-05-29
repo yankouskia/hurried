@@ -1,7 +1,13 @@
 import { EventEmitter } from 'node:events';
 import { Worker, isMainThread } from 'node:worker_threads';
 import { Bus, type EmitArgs, type EventMap, type Unsubscribe } from './bus.js';
-import { TaskAbortedError, TaskError, TaskTimeoutError, TerminatedError } from './errors.js';
+import {
+  HurriedError,
+  TaskAbortedError,
+  TaskError,
+  TaskTimeoutError,
+  TerminatedError,
+} from './errors.js';
 import {
   createBusMessage,
   createRequest,
@@ -10,6 +16,7 @@ import {
   isResponseMessage,
   type ResponseMessage,
 } from './protocol.js';
+import { normalizeRetry, withRetry } from './retry.js';
 import { buildInlineWorkerCode } from './runtime.js';
 import type { RunOptions, ThreadOptions, Task } from './types.js';
 
@@ -211,7 +218,8 @@ export class Thread<TEvents extends EventMap = EventMap, TArg = unknown, TResult
         typeof last === 'object' &&
         ('timeout' in (last as object) ||
           'signal' in (last as object) ||
-          'transferList' in (last as object))
+          'transferList' in (last as object) ||
+          'retry' in (last as object))
       ) {
         args = callArgs.slice(1, -1);
         options = last as RunOptions;
@@ -224,7 +232,19 @@ export class Thread<TEvents extends EventMap = EventMap, TArg = unknown, TResult
       options = callArgs[1] as RunOptions | undefined;
     }
 
-    return this.dispatch(name, args, options);
+    const retry = normalizeRetry(options?.retry);
+    if (!retry) return this.dispatch(name, args, options);
+    if (options?.transferList && options.transferList.length > 0) {
+      return Promise.reject(
+        new HurriedError(
+          '`retry` cannot be combined with `transferList`: transferred objects are detached after the first attempt and cannot be re-sent',
+        ),
+      );
+    }
+    // Re-check terminate per attempt; each dispatch gets a fresh request id.
+    const attempt = () =>
+      this.terminated ? Promise.reject(new TerminatedError()) : this.dispatch(name, args, options);
+    return withRetry(attempt, retry, options?.signal);
   }
 
   private dispatch(name: string, args: unknown[], options?: RunOptions): Promise<TResult> {

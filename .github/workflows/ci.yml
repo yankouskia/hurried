@@ -93,3 +93,4 @@ jobs:
       - run: npm run example:pool
       - run: npm run example:parallel
       - run: npm run example:stream
+      - run: npm run example:retry

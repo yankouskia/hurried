@@ -14,6 +14,7 @@ const sidebars: SidebarsConfig = {
         'guides/pool',
         'guides/parallel',
         'guides/streaming',
+        'guides/retry',
         'guides/file-workers',
       ],
     },

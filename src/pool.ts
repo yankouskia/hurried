@@ -1,6 +1,7 @@
 import { availableParallelism } from 'node:os';
 import { Bus, type EmitArgs, type EventMap, type Unsubscribe } from './bus.js';
 import { HurriedError, TaskAbortedError, TerminatedError } from './errors.js';
+import { normalizeRetry, withRetry } from './retry.js';
 import { streamResults, type StreamInput } from './stream.js';
 import { Thread } from './thread.js';
 import type { PoolOptions, RunOptions, StreamOptions } from './types.js';
@@ -132,6 +133,23 @@ export class Pool<TEvents extends EventMap = EventMap, TArg = unknown, TResult =
 
   /** Execute the pool's task once with the given argument. */
   run(arg: TArg, options?: RunOptions): Promise<TResult> {
+    const retry = normalizeRetry(options?.retry);
+    if (!retry) return this.runOnce(arg, options);
+    if (options?.transferList && options.transferList.length > 0) {
+      return Promise.reject(
+        new HurriedError(
+          '`retry` cannot be combined with `transferList`: transferred objects are detached after the first attempt and cannot be re-sent',
+        ),
+      );
+    }
+    // The pool owns retrying — strip `retry` from the per-attempt options so the
+    // worker thread doesn't retry again (which would multiply attempts). Each
+    // retry re-enqueues, so a transient worker failure can land on a healthy one.
+    const { retry: _retry, ...perAttempt } = options ?? {};
+    return withRetry(() => this.runOnce(arg, perAttempt), retry, options?.signal);
+  }
+
+  private runOnce(arg: TArg, options?: RunOptions): Promise<TResult> {
     if (this.terminated) return Promise.reject(new TerminatedError());
 
     if (options?.signal?.aborted) {
@@ -194,8 +212,8 @@ export class Pool<TEvents extends EventMap = EventMap, TArg = unknown, TResult =
   ): AsyncGenerator<TResult, void, void> {
     const concurrency = Math.max(1, Math.min(options.concurrency ?? this.size, this.size));
     const ordered = options.ordered ?? true;
-    const { signal, timeout } = options;
-    const callOptions = signal || timeout ? { signal, timeout } : undefined;
+    const { signal, timeout, retry } = options;
+    const callOptions = signal || timeout || retry ? { signal, timeout, retry } : undefined;
     return streamResults<TArg, TResult>(items, (arg) => this.run(arg, callOptions), {
       concurrency,
       ordered,

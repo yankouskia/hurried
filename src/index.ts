@@ -31,4 +31,6 @@ export type {
 
 export type { StreamInput } from './stream.js';
 
+export type { RetryInput, RetryOptions } from './retry.js';
+
 export type { EventMap, EmitArgs, Unsubscribe } from './bus.js';

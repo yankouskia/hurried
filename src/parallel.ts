@@ -25,7 +25,7 @@ export async function parallel<T>(
   options: ParallelOptions = {},
 ): Promise<T[]> {
   if (tasks.length === 0) return [];
-  const { concurrency, signal, timeout } = options;
+  const { concurrency, signal, timeout, retry } = options;
 
   const results = new Array<T>(tasks.length);
   const limit = Math.max(1, Math.min(concurrency ?? tasks.length, tasks.length));
@@ -35,7 +35,7 @@ export async function parallel<T>(
     if (signal?.aborted) throw new TaskAbortedError();
     const thread = Thread.fromFunction(tasks[i]! as Task<void, T>, { timeout });
     try {
-      const callOpts = signal || timeout ? { signal, timeout } : undefined;
+      const callOpts = signal || timeout || retry ? { signal, timeout, retry } : undefined;
       results[i] = (await thread.run(undefined as unknown as void, callOpts)) as T;
     } finally {
       await thread.terminate();
@@ -75,12 +75,12 @@ export async function mapParallel<TArg, TResult>(
   options: ParallelOptions = {},
 ): Promise<TResult[]> {
   if (items.length === 0) return [];
-  const { concurrency, signal, timeout } = options;
+  const { concurrency, signal, timeout, retry } = options;
   const size = Math.max(1, Math.min(concurrency ?? items.length, items.length));
 
   const pool = new Pool<EventMap, TArg, TResult>({ task, size, timeout });
   try {
-    const callOpts = signal || timeout ? { signal, timeout } : undefined;
+    const callOpts = signal || timeout || retry ? { signal, timeout, retry } : undefined;
     return (await pool.map(items, callOpts)) as TResult[];
   } finally {
     await pool.terminate();
@@ -114,7 +114,7 @@ export async function* mapParallelStream<TArg, TResult>(
   task: Task<TArg, TResult>,
   options: StreamOptions = {},
 ): AsyncGenerator<TResult, void, void> {
-  const { concurrency, ordered, signal, timeout } = options;
+  const { concurrency, ordered, signal, timeout, retry } = options;
   // The pool is spawned here, on first iteration — never on the bare call — so a
   // stream that's built but never consumed leaks no workers, and the try/finally
   // always tears the pool down once any work has started.
@@ -126,7 +126,7 @@ export async function* mapParallelStream<TArg, TResult>(
     size ? { task, size, timeout } : { task, timeout },
   );
   try {
-    yield* pool.stream(items, { ordered, signal, timeout });
+    yield* pool.stream(items, { ordered, signal, timeout, retry });
   } finally {
     await pool.terminate();
   }

@@ -21,6 +21,9 @@ interface RunOptions {
 
   /** Transferable objects passed via structured-clone fast path. */
   transferList?: ReadonlyArray<TransferListItem>;
+
+  /** Retry on failure — a count of extra attempts, or a backoff config. */
+  retry?: RetryInput;
 }
 ```
 
@@ -94,8 +97,38 @@ interface ParallelOptions {
 
   /** AbortSignal for the whole batch. */
   signal?: AbortSignal;
+
+  /** Retry each task on failure — a count of extra attempts, or a backoff config. */
+  retry?: RetryInput;
 }
 ```
+
+## `RetryOptions`
+
+The shape behind `retry`. A bare `number` is shorthand for `{ retries: number }`.
+
+```ts
+type RetryInput = number | RetryOptions;
+
+interface RetryOptions {
+  /** Extra attempts after the first. `retries: 2` → up to 3 tries. Default 0. */
+  retries?: number;
+  /** Base delay (ms) before the first retry. Default 0. */
+  minDelay?: number;
+  /** Cap on any single backoff delay (ms). Default unbounded. */
+  maxDelay?: number;
+  /** Exponential multiplier: delay = minDelay * factor^(n-1). Default 2. */
+  factor?: number;
+  /** Full jitter — random value in [0, delay]. Default false. */
+  jitter?: boolean;
+  /** Decide whether to retry a given error (default: all but abort/teardown). */
+  shouldRetry?: (error: unknown, attempt: number) => boolean;
+  /** Called after a failed attempt, before the backoff delay. */
+  onRetry?: (error: unknown, attempt: number) => void;
+}
+```
+
+The per-call `timeout` applies to **each** attempt. `TaskAbortedError` and `TerminatedError` are never retried. `retry` cannot be combined with `transferList` — a transferred object is detached after the first attempt and can't be re-sent, so that combination is rejected. See the [Retry guide](../guides/retry).
 
 ## `StreamOptions`
 
