@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-05-23
+
+Feature release — fully backward compatible. Drop-in upgrade from 2.1.0.
+
+### Added
+
+- **Retry with backoff.** A `retry` option on every primitive
+  (`thread.run`, `pool.run`, `parallel`, `mapParallel`, `pool.stream`,
+  `mapParallelStream`) automatically re-runs a failed task. Pass a number for
+  the count of extra attempts (`{ retry: 3 }` → up to 4 tries) or a
+  `RetryOptions` object for exponential backoff:
+
+  - `minDelay` / `factor` / `maxDelay` for the delay schedule, plus `jitter`
+    for full jitter.
+  - `shouldRetry(error, attempt)` to control which errors retry, and
+    `onRetry(error, attempt)` for logging/metrics.
+  - Cancellation and teardown errors (`TaskAbortedError`, `TerminatedError`)
+    are never retried; an `AbortSignal` interrupts even a pending backoff.
+  - The per-call `timeout` applies to each attempt; for a `Pool`, each retry
+    re-queues so it can land on a healthy worker.
+
+  New `RetryInput` and `RetryOptions` types are exported.
+
 ## [2.1.0] - 2026-05-23
 
 Feature release — fully backward compatible. Drop-in upgrade from 2.0.2.
@@ -111,6 +134,7 @@ API and production-ready primitives.
 
 Initial public release. See git history for details.
 
+[2.2.0]: https://github.com/yankouskia/hurried/releases/tag/v2.2.0
 [2.1.0]: https://github.com/yankouskia/hurried/releases/tag/v2.1.0
 [2.0.2]: https://github.com/yankouskia/hurried/releases/tag/v2.0.2
 [2.0.1]: https://github.com/yankouskia/hurried/releases/tag/v2.0.1

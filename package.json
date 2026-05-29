@@ -1,6 +1,6 @@
 {
   "name": "hurried",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Modern, type-safe parallel execution for Node.js — workers, pools and parallel iterators with first-class TypeScript support.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -37,6 +37,7 @@
     "example:pool": "tsx examples/pool.ts",
     "example:parallel": "tsx examples/parallel.ts",
     "example:stream": "tsx examples/stream.ts",
+    "example:retry": "tsx examples/retry.ts",
     "example:performance": "tsx examples/performance.ts",
     "example:bus-progress": "tsx examples/bus-progress.ts",
     "example:bus-pool": "tsx examples/bus-pool.ts",
