@@ -13,6 +13,7 @@ const sidebars: SidebarsConfig = {
         'guides/thread',
         'guides/pool',
         'guides/parallel',
+        'guides/streaming',
         'guides/file-workers',
       ],
     },

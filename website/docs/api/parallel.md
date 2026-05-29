@@ -40,6 +40,31 @@ Far more efficient than `parallel` when running the same operation across many i
 const out = await mapParallel(urls, fetchAndParse, { concurrency: 8 });
 ```
 
+# `mapParallelStream(items, task, options?)`
+
+Streaming counterpart to `mapParallel`: parallel-map a source and get results back as an **async iterator**, yielded as they're ready instead of buffered into one array.
+
+```ts
+function mapParallelStream<TArg, TResult>(
+  items: Iterable<TArg> | AsyncIterable<TArg>,
+  task: (arg: TArg) => TResult | Promise<TResult>,
+  options?: StreamOptions,
+): AsyncGenerator<TResult, void, void>;
+```
+
+The pool is created and torn down for you — including on an early `break`. The source is pulled lazily (it may be a generator, an async iterable, or infinite) and at most `concurrency` items are outstanding at once, so memory stays flat.
+
+```ts
+for await (const parsed of mapParallelStream(readLines(file), parseLine, {
+  concurrency: 8,
+  ordered: false, // emit as-completed for the lowest latency to the first result
+})) {
+  save(parsed);
+}
+```
+
+See the [Streaming guide](../guides/streaming) for the full picture.
+
 ## `ParallelOptions`
 
 ```ts
@@ -47,5 +72,16 @@ interface ParallelOptions {
   concurrency?: number;        // worker count; default: availableParallelism()
   timeout?: number;            // per-task timeout (ms)
   signal?: AbortSignal;        // cancellation
+}
+```
+
+## `StreamOptions`
+
+`mapParallelStream` and `pool.stream` take `ParallelOptions` plus:
+
+```ts
+interface StreamOptions extends ParallelOptions {
+  /** Emit in input order (default) or as soon as each task settles. */
+  ordered?: boolean;           // default: true
 }
 ```

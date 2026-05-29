@@ -1,14 +1,17 @@
 import { availableParallelism } from 'node:os';
 import { Bus, type EmitArgs, type EventMap, type Unsubscribe } from './bus.js';
 import { HurriedError, TaskAbortedError, TerminatedError } from './errors.js';
+import { streamResults, type StreamInput } from './stream.js';
 import { Thread } from './thread.js';
-import type { PoolOptions, RunOptions } from './types.js';
+import type { PoolOptions, RunOptions, StreamOptions } from './types.js';
 
 interface QueueItem<TArg, TResult> {
   arg: TArg;
   options?: RunOptions;
   resolve: (value: TResult) => void;
   reject: (err: unknown) => void;
+  /** Detaches the abort listener; called once the task settles, however it settles. */
+  cleanup?: () => void;
 }
 
 /**
@@ -142,14 +145,19 @@ export class Pool<TEvents extends EventMap = EventMap, TArg = unknown, TResult =
     return new Promise<TResult>((resolve, reject) => {
       const item: QueueItem<TArg, TResult> = { arg, options, resolve, reject };
       if (options?.signal) {
+        const signal = options.signal;
         const onAbort = () => {
           const idx = this.queue.indexOf(item);
           if (idx !== -1) {
             this.queue.splice(idx, 1);
+            item.cleanup?.();
             reject(new TaskAbortedError());
           }
         };
-        options.signal.addEventListener('abort', onAbort, { once: true });
+        signal.addEventListener('abort', onAbort, { once: true });
+        // Removed on settle so streaming a long/infinite source with a shared
+        // signal doesn't accumulate one listener per item.
+        item.cleanup = () => signal.removeEventListener('abort', onAbort);
       }
       this.queue.push(item);
       this.drain();
@@ -161,12 +169,49 @@ export class Pool<TEvents extends EventMap = EventMap, TArg = unknown, TResult =
     return Promise.all(args.map((arg) => this.run(arg, options)));
   }
 
+  /**
+   * Stream inputs through the pool as an async iterator, yielding each result as
+   * it's ready instead of buffering them all.
+   *
+   * Unlike {@link Pool.map}, the source is pulled **lazily** — only when a worker
+   * frees up — so it can be a generator, an async iterable, or even infinite, and
+   * memory stays flat regardless of input size. Results are emitted in input
+   * order by default, or as-completed (lowest latency) with `{ ordered: false }`.
+   * `concurrency` is capped at the pool size to preserve backpressure. The pool is
+   * left running and reusable after the stream ends; breaking out of the loop
+   * early stops pulling the source.
+   *
+   * @example
+   * ```ts
+   * for await (const result of pool.stream(urls, { ordered: false })) {
+   *   handle(result);   // arrives as soon as any worker finishes
+   * }
+   * ```
+   */
+  stream(
+    items: StreamInput<TArg>,
+    options: StreamOptions = {},
+  ): AsyncGenerator<TResult, void, void> {
+    const concurrency = Math.max(1, Math.min(options.concurrency ?? this.size, this.size));
+    const ordered = options.ordered ?? true;
+    const { signal, timeout } = options;
+    const callOptions = signal || timeout ? { signal, timeout } : undefined;
+    return streamResults<TArg, TResult>(items, (arg) => this.run(arg, callOptions), {
+      concurrency,
+      ordered,
+      signal,
+    });
+  }
+
   /** Terminate every worker. Pending tasks are rejected with a {@link TerminatedError}. */
   async terminate(): Promise<void> {
     if (this.terminated) return;
     this.terminated = true;
     const pending = this.queue.splice(0);
-    for (const item of pending) item.reject(new TerminatedError());
+    for (const item of pending) {
+      item.cleanup?.();
+      item.reject(new TerminatedError());
+    }
     this._bus.clear();
     await Promise.all(this.workers.map((w) => w.terminate()));
   }
@@ -180,8 +225,16 @@ export class Pool<TEvents extends EventMap = EventMap, TArg = unknown, TResult =
 
       worker
         .run(item.arg, callOptions)
-        .then((res) => item.resolve(res))
-        .catch((err) => item.reject(err))
+        .then(
+          (res) => {
+            item.cleanup?.();
+            item.resolve(res);
+          },
+          (err) => {
+            item.cleanup?.();
+            item.reject(err);
+          },
+        )
         .finally(() => {
           if (!this.terminated) {
             this.idle.push(worker);

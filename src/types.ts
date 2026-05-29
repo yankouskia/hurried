@@ -46,6 +46,15 @@ export interface ParallelOptions {
   signal?: AbortSignal;
 }
 
+export interface StreamOptions extends ParallelOptions {
+  /**
+   * Emit results in input order (`true`, the default) or as soon as each task
+   * settles (`false`). As-completed minimizes latency to the first result and
+   * needs no reorder buffer; ordered mirrors `map()` semantics.
+   */
+  ordered?: boolean;
+}
+
 /** Signature of a "function as task" — must be pure / self-contained. */
 export type Task<TArg, TResult> = (arg: TArg) => TResult | Promise<TResult>;
 

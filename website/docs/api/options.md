@@ -96,3 +96,20 @@ interface ParallelOptions {
   signal?: AbortSignal;
 }
 ```
+
+## `StreamOptions`
+
+Passed to `mapParallelStream()` and `pool.stream()`. Extends `ParallelOptions`:
+
+```ts
+interface StreamOptions extends ParallelOptions {
+  /**
+   * Emit results in input order (`true`, the default) or as soon as each task
+   * settles (`false`). As-completed minimizes latency to the first result and
+   * needs no reorder buffer.
+   */
+  ordered?: boolean;
+}
+```
+
+For `pool.stream()`, `concurrency` is capped at the pool size. See the [Streaming guide](../guides/streaming).

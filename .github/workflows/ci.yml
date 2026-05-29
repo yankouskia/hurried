@@ -92,3 +92,4 @@ jobs:
       - run: npm run example:basic
       - run: npm run example:pool
       - run: npm run example:parallel
+      - run: npm run example:stream

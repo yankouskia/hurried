@@ -77,6 +77,7 @@ CPU-bound JavaScript blocks the event loop. The standard Node fix — `worker_th
     <tr><td><b>Typed event bus</b> (<code>thread.on('progress', …)</code>)</td><td>✅</td><td>❌ untyped</td><td>rare</td></tr>
     <tr><td><b>Worker pool</b> with queue + backpressure</td><td>✅ <code>Pool</code></td><td>❌</td><td>✅</td></tr>
     <tr><td><b>Parallel map / array helpers</b></td><td>✅ <code>mapParallel</code></td><td>❌</td><td>partial</td></tr>
+    <tr><td><b>Streaming async-iterator results</b> (ordered or as-completed)</td><td>✅ <code>mapParallelStream</code></td><td>❌</td><td>partial</td></tr>
     <tr><td><b>AbortSignal + per-call timeout</b></td><td>✅</td><td>❌</td><td>partial</td></tr>
     <tr><td><b>Dual ESM + CJS</b>, zero deps</td><td>✅</td><td>n/a</td><td>varies</td></tr>
     <tr><td><b>First-class TypeScript</b> (types travel across the worker boundary)</td><td>✅</td><td>❌</td><td>partial</td></tr>
@@ -141,6 +142,22 @@ const squares = await mapParallel(
   { concurrency: 4 },
 );
 ```
+
+### 4) Stream results as they finish
+
+```ts
+import { mapParallelStream } from 'hurried';
+
+// Source is pulled lazily — it can be huge, or infinite. Memory stays flat.
+for await (const parsed of mapParallelStream(readLines('huge.log'), parseLine, {
+  concurrency: 8,
+  ordered: false,   // emit as-completed; drop it for input order
+})) {
+  save(parsed);     // each result, the moment a worker produces it
+}
+```
+
+A true parallel **iterator**: bounded concurrency, backpressure, and clean teardown on early `break`. Already have a `Pool`? Stream through it with `pool.stream(items)`.
 
 ---
 
@@ -387,6 +404,7 @@ TypeScript narrows the union per branch — no `as any`, no manual type guards.
 | --- | --- |
 | `new Pool({ task, size?, maxQueue?, timeout?, … })` | Fixed-size pool of workers running the same task. |
 | `pool.run / pool.map` | Run one or many. Inputs preserve order. |
+| `pool.stream(items, options?)` | Stream results as an async iterator — lazy, bounded, ordered or as-completed. |
 | `pool.on / emit / bus()` | Aggregated event bus across workers. |
 | `pool.size / idleCount / queueLength` | Inspection. |
 | `pool.terminate()` | Reject queued tasks, tear down workers. |
@@ -397,6 +415,7 @@ TypeScript narrows the union per branch — no `as any`, no manual type guards.
 | --- | --- |
 | `parallel(tasks, options?)` | Run an array of inline functions concurrently. |
 | `mapParallel(items, task, options?)` | Parallel-map an iterable through one task using a pool. |
+| `mapParallelStream(items, task, options?)` | Streaming `mapParallel` — async iterator of results, bounded memory over huge/infinite sources. |
 | `defineWorker(handlers)` | Register a typed handler map inside a worker file. |
 | `workerBus<Events>()` | Get the typed `Bus<Events>` inside a worker. |
 
@@ -421,7 +440,7 @@ All errors extend `HurriedError`: `TaskError` (handler threw — original in `.c
 ## 🧪 Testing
 
 - **Vitest** with v8 coverage. CI enforces ≥ 50% thresholds; the suite ships at **~95% statements**.
-- **95 tests** across 11 files: bus, runtime, protocol, thread, pool, parallel helpers, legacy handler API.
+- **123 tests** across 12 files: bus, runtime, protocol, thread, pool, parallel & streaming helpers, legacy handler API.
 - **Matrix CI:** Node 18 / 20 / 22 / 24 × Ubuntu / macOS / Windows × lint + typecheck + format + test + coverage + build + examples.
 
 ```sh

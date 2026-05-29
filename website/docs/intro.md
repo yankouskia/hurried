@@ -25,6 +25,7 @@ That's it. Type-safe `run()`, automatic worker lifecycle, real Promise.
 - **A typed event bus** — `thread.on('progress', payload => ...)` with full TypeScript inference both sides of the worker boundary.
 - **Pools** with task queues, backpressure, and aggregated event streams.
 - **Parallel helpers** — `parallel()` and `mapParallel()` for fire-and-forget concurrency.
+- **Streaming iterators** — `mapParallelStream()` / `pool.stream()` yield results as they're ready, with bounded memory over huge or infinite sources.
 - **AbortSignal + timeouts** on every primitive.
 - **Structured errors** — `TaskError`, `TaskTimeoutError`, `TaskAbortedError`, `TerminatedError`.
 - **Dual ESM + CJS** with generated `.d.ts`. Zero runtime dependencies.

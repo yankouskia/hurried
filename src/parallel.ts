@@ -1,8 +1,9 @@
 import type { EventMap } from './bus.js';
 import { TaskAbortedError } from './errors.js';
 import { Pool } from './pool.js';
+import type { StreamInput } from './stream.js';
 import { Thread } from './thread.js';
-import type { ParallelOptions, Task } from './types.js';
+import type { ParallelOptions, StreamOptions, Task } from './types.js';
 
 /**
  * Run an array of inline functions in parallel, capping concurrency.
@@ -81,6 +82,51 @@ export async function mapParallel<TArg, TResult>(
   try {
     const callOpts = signal || timeout ? { signal, timeout } : undefined;
     return (await pool.map(items, callOpts)) as TResult[];
+  } finally {
+    await pool.terminate();
+  }
+}
+
+/**
+ * Streaming counterpart to {@link mapParallel}: parallel-map a source through a
+ * single task and get the results back as an async iterator, yielded as they're
+ * ready instead of buffered into one big array.
+ *
+ * The pool is created and torn down for you — including when you `break` out of
+ * the loop early. The source is pulled lazily (it may be a generator, an async
+ * iterable, or infinite) and at most `concurrency` items are outstanding at once,
+ * so memory stays flat. Results come back in input order by default, or
+ * as-completed with `{ ordered: false }` for the lowest latency to the first
+ * result.
+ *
+ * @example
+ * ```ts
+ * for await (const parsed of mapParallelStream(readLines(file), parseLine, {
+ *   concurrency: 8,
+ *   ordered: false,
+ * })) {
+ *   save(parsed);
+ * }
+ * ```
+ */
+export async function* mapParallelStream<TArg, TResult>(
+  items: StreamInput<TArg>,
+  task: Task<TArg, TResult>,
+  options: StreamOptions = {},
+): AsyncGenerator<TResult, void, void> {
+  const { concurrency, ordered, signal, timeout } = options;
+  // The pool is spawned here, on first iteration — never on the bare call — so a
+  // stream that's built but never consumed leaks no workers, and the try/finally
+  // always tears the pool down once any work has started.
+  const size =
+    concurrency != null && Number.isFinite(concurrency)
+      ? Math.max(1, Math.floor(concurrency))
+      : undefined;
+  const pool = new Pool<EventMap, TArg, TResult>(
+    size ? { task, size, timeout } : { task, timeout },
+  );
+  try {
+    yield* pool.stream(items, { ordered, signal, timeout });
   } finally {
     await pool.terminate();
   }

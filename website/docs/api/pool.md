@@ -40,6 +40,27 @@ Run the task across every input. Inputs preserve order in the output.
 map(args: ReadonlyArray<TArg>, options?: RunOptions): Promise<TResult[]>;
 ```
 
+### `pool.stream(items, options?)`
+
+Stream inputs through the pool as an async iterator, yielding each result as it's ready instead of buffering them all.
+
+```ts
+stream(
+  items: Iterable<TArg> | AsyncIterable<TArg>,
+  options?: StreamOptions,
+): AsyncGenerator<TResult, void, void>;
+```
+
+The source is pulled **lazily** (it may be a generator, an async iterable, or infinite) and at most `concurrency` items are outstanding at once, so memory stays flat. Results are emitted in input order by default, or as-completed with `{ ordered: false }`. `concurrency` is capped at the pool size. The pool is left running and reusable after the stream ends; an early `break` stops pulling the source.
+
+```ts
+for await (const result of pool.stream(urls, { ordered: false })) {
+  handle(result); // arrives the moment any worker finishes
+}
+```
+
+See the [Streaming guide](../guides/streaming) for ordered vs as-completed, backpressure, and cancellation.
+
 ### `pool.on / once / off / emit / bus()`
 
 Aggregated typed event API. Events from any worker fire `pool.on(...)` listeners; `pool.emit(...)` broadcasts to every worker. See [Bus](./bus).
