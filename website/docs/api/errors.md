@@ -15,6 +15,7 @@ classDiagram
   HurriedError <|-- TaskTimeoutError
   HurriedError <|-- TaskAbortedError
   HurriedError <|-- TerminatedError
+  HurriedError <|-- WorkerExitedError
   class HurriedError {
     +string name
     +string message
@@ -24,6 +25,9 @@ classDiagram
   }
   class TaskTimeoutError {
     +number timeoutMs
+  }
+  class WorkerExitedError {
+    +number code
   }
 ```
 
@@ -74,9 +78,21 @@ try {
 
 ## `TerminatedError`
 
-The worker was terminated mid-flight (manually via `terminate()` or because it exited).
+The worker was **deliberately** torn down mid-flight via `terminate()`.
 
 ```ts
 const promise = thread.run(arg);
 await thread.terminate();        // promise rejects with TerminatedError
+```
+
+## `WorkerExitedError`
+
+The worker exited **on its own** — `process.exit()` in task code, an OOM, or a fatal native error — rather than being terminated. Kept distinct from `TerminatedError` so the [`*Settled` helpers](../guides/settled) can treat a crashed worker as a recoverable per-item failure instead of a deliberate stop. Exposes the exit `code` when the runtime reports one.
+
+```ts
+try {
+  await thread.run(arg);
+} catch (e) {
+  if (e instanceof WorkerExitedError) respawn();
+}
 ```

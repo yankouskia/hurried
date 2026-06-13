@@ -1,6 +1,7 @@
 import type { EventMap } from './bus.js';
 import { TaskAbortedError } from './errors.js';
 import { Pool } from './pool.js';
+import type { SettledResult } from './settled.js';
 import type { StreamInput } from './stream.js';
 import { Thread } from './thread.js';
 import type { ParallelOptions, StreamOptions, Task } from './types.js';
@@ -127,6 +128,72 @@ export async function* mapParallelStream<TArg, TResult>(
   );
   try {
     yield* pool.stream(items, { ordered, signal, timeout, retry });
+  } finally {
+    await pool.terminate();
+  }
+}
+
+/**
+ * Fault-tolerant {@link mapParallel}: resolves to one {@link SettledResult} per
+ * input — a task that throws becomes a `rejected` entry instead of failing the
+ * whole batch. The worker-thread analogue of `Promise.allSettled`.
+ *
+ * Only a task's own failure is recorded; an `AbortSignal` firing still rejects
+ * the returned promise.
+ *
+ * @example
+ * ```ts
+ * const results = await mapParallelSettled(urls, fetchAndParse, { concurrency: 8 });
+ * const failures = results.filter((r) => r.status === 'rejected');
+ * ```
+ */
+export async function mapParallelSettled<TArg, TResult>(
+  items: ReadonlyArray<TArg>,
+  task: Task<TArg, TResult>,
+  options: ParallelOptions = {},
+): Promise<SettledResult<TResult>[]> {
+  if (items.length === 0) return [];
+  const { concurrency, signal, timeout, retry } = options;
+  const size = Math.max(1, Math.min(concurrency ?? items.length, items.length));
+
+  const pool = new Pool<EventMap, TArg, TResult>({ task, size, timeout });
+  try {
+    const callOpts = signal || timeout || retry ? { signal, timeout, retry } : undefined;
+    return await pool.mapSettled(items, callOpts);
+  } finally {
+    await pool.terminate();
+  }
+}
+
+/**
+ * Fault-tolerant {@link mapParallelStream}: yields one {@link SettledResult} per
+ * input as it's ready — a task that throws becomes a `rejected` entry instead of
+ * ending the stream. Only an `AbortSignal` stops it. Same lazy pull, bounded
+ * memory, and ordering options as {@link mapParallelStream}.
+ *
+ * @example
+ * ```ts
+ * for await (const r of mapParallelStreamSettled(readLines(file), parseLine)) {
+ *   if (r.status === 'fulfilled') save(r.value);
+ *   else recordFailure(r.reason);
+ * }
+ * ```
+ */
+export async function* mapParallelStreamSettled<TArg, TResult>(
+  items: StreamInput<TArg>,
+  task: Task<TArg, TResult>,
+  options: StreamOptions = {},
+): AsyncGenerator<SettledResult<TResult>, void, void> {
+  const { concurrency, ordered, signal, timeout, retry } = options;
+  const size =
+    concurrency != null && Number.isFinite(concurrency)
+      ? Math.max(1, Math.floor(concurrency))
+      : undefined;
+  const pool = new Pool<EventMap, TArg, TResult>(
+    size ? { task, size, timeout } : { task, timeout },
+  );
+  try {
+    yield* pool.streamSettled(items, { ordered, signal, timeout, retry });
   } finally {
     await pool.terminate();
   }

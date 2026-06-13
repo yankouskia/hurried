@@ -6,7 +6,13 @@
 
 export { Thread } from './thread.js';
 export { Pool } from './pool.js';
-export { parallel, mapParallel, mapParallelStream } from './parallel.js';
+export {
+  parallel,
+  mapParallel,
+  mapParallelStream,
+  mapParallelSettled,
+  mapParallelStreamSettled,
+} from './parallel.js';
 export { makeExecutable, defineWorker } from './make-executable.js';
 export { workerBus } from './worker-bus.js';
 export { Bus } from './bus.js';
@@ -17,6 +23,7 @@ export {
   TaskTimeoutError,
   TaskAbortedError,
   TerminatedError,
+  WorkerExitedError,
 } from './errors.js';
 
 export type {
@@ -30,6 +37,8 @@ export type {
 } from './types.js';
 
 export type { StreamInput } from './stream.js';
+
+export type { SettledResult } from './settled.js';
 
 export type { RetryInput, RetryOptions } from './retry.js';
 

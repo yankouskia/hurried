@@ -7,6 +7,7 @@ import {
   TaskError,
   TaskTimeoutError,
   TerminatedError,
+  WorkerExitedError,
 } from './errors.js';
 import {
   createBusMessage,
@@ -47,6 +48,8 @@ export class Thread<TEvents extends EventMap = EventMap, TArg = unknown, TResult
   private readonly pending = new Map<string, PendingCall>();
   private readonly _bus: Bus<TEvents>;
   private terminated = false;
+  /** True when the worker exited on its own (crash) rather than via terminate(). */
+  private exited = false;
 
   /** @internal */
   constructor(worker: Worker, defaultTimeout?: number) {
@@ -66,10 +69,12 @@ export class Thread<TEvents extends EventMap = EventMap, TArg = unknown, TResult
     });
 
     this.worker.on('error', (err) => this.rejectAll(err));
-    this.worker.on('exit', () => {
+    this.worker.on('exit', (code) => {
       if (this.terminated) return;
+      // Involuntary exit (crash / process.exit / OOM) — distinct from terminate().
       this.terminated = true;
-      this.rejectAll(new TerminatedError());
+      this.exited = true;
+      this.rejectAll(new WorkerExitedError(code));
     });
   }
 
@@ -202,7 +207,7 @@ export class Thread<TEvents extends EventMap = EventMap, TArg = unknown, TResult
   run(handler: string, ...args: unknown[]): Promise<TResult>;
   run(...callArgs: unknown[]): Promise<TResult> {
     if (this.terminated) {
-      return Promise.reject(new TerminatedError());
+      return Promise.reject(this.exited ? new WorkerExitedError() : new TerminatedError());
     }
 
     let name: string;
@@ -243,7 +248,9 @@ export class Thread<TEvents extends EventMap = EventMap, TArg = unknown, TResult
     }
     // Re-check terminate per attempt; each dispatch gets a fresh request id.
     const attempt = () =>
-      this.terminated ? Promise.reject(new TerminatedError()) : this.dispatch(name, args, options);
+      this.terminated
+        ? Promise.reject(this.exited ? new WorkerExitedError() : new TerminatedError())
+        : this.dispatch(name, args, options);
     return withRetry(attempt, retry, options?.signal);
   }
 

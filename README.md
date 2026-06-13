@@ -79,6 +79,7 @@ CPU-bound JavaScript blocks the event loop. The standard Node fix — `worker_th
     <tr><td><b>Parallel map / array helpers</b></td><td>✅ <code>mapParallel</code></td><td>❌</td><td>partial</td></tr>
     <tr><td><b>Streaming async-iterator results</b> (ordered or as-completed)</td><td>✅ <code>mapParallelStream</code></td><td>❌</td><td>partial</td></tr>
     <tr><td><b>Retry + exponential backoff</b> (per call, every primitive)</td><td>✅ <code>{ retry: 3 }</code></td><td>❌</td><td>❌</td></tr>
+    <tr><td><b>Fault-tolerant batches</b> (<code>allSettled</code> for workers)</td><td>✅ <code>mapParallelSettled</code></td><td>❌</td><td>❌</td></tr>
     <tr><td><b>AbortSignal + per-call timeout</b></td><td>✅</td><td>❌</td><td>partial</td></tr>
     <tr><td><b>Dual ESM + CJS</b>, zero deps</td><td>✅</td><td>n/a</td><td>varies</td></tr>
     <tr><td><b>First-class TypeScript</b> (types travel across the worker boundary)</td><td>✅</td><td>❌</td><td>partial</td></tr>
@@ -172,6 +173,22 @@ await mapParallel(urls, fetchAndParse, { retry: 3, concurrency: 8 });
 ```
 
 Exponential backoff, jitter, a custom `shouldRetry`/`onRetry`, and full `AbortSignal` support — cancellation interrupts even a pending backoff. Abort and teardown errors are never retried.
+
+### 6) Survive partial failure — `allSettled` for workers
+
+```ts
+import { mapParallelSettled } from 'hurried';
+
+// One bad item no longer rejects the whole batch.
+const results = await mapParallelSettled(urls, fetchAndParse, { concurrency: 8 });
+
+for (const r of results) {
+  if (r.status === 'fulfilled') save(r.value);
+  else log.warn(r.reason);
+}
+```
+
+Every map/stream helper has a settled twin — `mapParallelSettled`, `mapParallelStreamSettled`, `pool.mapSettled`, `pool.streamSettled` — each yielding a typed `SettledResult` per item. Task failures are recorded; cancellation still stops everything.
 
 ---
 
@@ -418,6 +435,7 @@ TypeScript narrows the union per branch — no `as any`, no manual type guards.
 | --- | --- |
 | `new Pool({ task, size?, maxQueue?, timeout?, … })` | Fixed-size pool of workers running the same task. |
 | `pool.run / pool.map` | Run one or many. Inputs preserve order. |
+| `pool.mapSettled / pool.streamSettled` | Fault-tolerant `map`/`stream` — a `SettledResult` per item; failures don't sink the batch. |
 | `pool.stream(items, options?)` | Stream results as an async iterator — lazy, bounded, ordered or as-completed. |
 | `pool.on / emit / bus()` | Aggregated event bus across workers. |
 | `pool.size / idleCount / queueLength` | Inspection. |
@@ -430,6 +448,7 @@ TypeScript narrows the union per branch — no `as any`, no manual type guards.
 | `parallel(tasks, options?)` | Run an array of inline functions concurrently. |
 | `mapParallel(items, task, options?)` | Parallel-map an iterable through one task using a pool. |
 | `mapParallelStream(items, task, options?)` | Streaming `mapParallel` — async iterator of results, bounded memory over huge/infinite sources. |
+| `mapParallelSettled / mapParallelStreamSettled` | Fault-tolerant batch / stream — `SettledResult` per item (`allSettled` for workers). |
 | `defineWorker(handlers)` | Register a typed handler map inside a worker file. |
 | `workerBus<Events>()` | Get the typed `Bus<Events>` inside a worker. |
 
@@ -448,14 +467,14 @@ interface RunOptions {
 
 ### Errors
 
-All errors extend `HurriedError`: `TaskError` (handler threw — original in `.cause`), `TaskTimeoutError`, `TaskAbortedError`, `TerminatedError`.
+All errors extend `HurriedError`: `TaskError` (handler threw — original in `.cause`), `TaskTimeoutError`, `TaskAbortedError`, `TerminatedError` (you tore the worker down), `WorkerExitedError` (the worker crashed on its own).
 
 ---
 
 ## 🧪 Testing
 
 - **Vitest** with v8 coverage. CI enforces ≥ 50% thresholds; the suite ships at **~95% statements**.
-- **142 tests** across 13 files: bus, runtime, protocol, thread, pool, parallel & streaming helpers, retry/backoff, legacy handler API.
+- **156 tests** across 14 files: bus, runtime, protocol, thread, pool, parallel & streaming helpers, retry/backoff, settled batches, legacy handler API.
 - **Matrix CI:** Node 18 / 20 / 22 / 24 × Ubuntu / macOS / Windows × lint + typecheck + format + test + coverage + build + examples.
 
 ```sh

@@ -65,6 +65,38 @@ for await (const parsed of mapParallelStream(readLines(file), parseLine, {
 
 See the [Streaming guide](../guides/streaming) for the full picture.
 
+# `mapParallelSettled(items, task, options?)`
+
+Fault-tolerant `mapParallel`: resolves to one `SettledResult` per input instead of rejecting on the first failure — the `Promise.allSettled` analogue.
+
+```ts
+function mapParallelSettled<TArg, TResult>(
+  items: ReadonlyArray<TArg>,
+  task: (arg: TArg) => TResult | Promise<TResult>,
+  options?: ParallelOptions,
+): Promise<SettledResult<TResult>[]>;
+```
+
+# `mapParallelStreamSettled(items, task, options?)`
+
+Fault-tolerant `mapParallelStream`: yields a `SettledResult` per input as it's ready.
+
+```ts
+function mapParallelStreamSettled<TArg, TResult>(
+  items: Iterable<TArg> | AsyncIterable<TArg>,
+  task: (arg: TArg) => TResult | Promise<TResult>,
+  options?: StreamOptions,
+): AsyncGenerator<SettledResult<TResult>, void, void>;
+```
+
+```ts
+type SettledResult<T> =
+  | { status: 'fulfilled'; value: T }
+  | { status: 'rejected'; reason: unknown };
+```
+
+Only a task's own failure becomes a `rejected` entry; an `AbortSignal` still stops everything. See the [Fault tolerance guide](../guides/settled).
+
 ## `ParallelOptions`
 
 ```ts

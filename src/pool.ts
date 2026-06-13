@@ -1,7 +1,8 @@
 import { availableParallelism } from 'node:os';
 import { Bus, type EmitArgs, type EventMap, type Unsubscribe } from './bus.js';
-import { HurriedError, TaskAbortedError, TerminatedError } from './errors.js';
+import { HurriedError, TaskAbortedError, TerminatedError, WorkerExitedError } from './errors.js';
 import { normalizeRetry, withRetry } from './retry.js';
+import { settle, type SettledResult } from './settled.js';
 import { streamResults, type StreamInput } from './stream.js';
 import { Thread } from './thread.js';
 import type { PoolOptions, RunOptions, StreamOptions } from './types.js';
@@ -188,6 +189,25 @@ export class Pool<TEvents extends EventMap = EventMap, TArg = unknown, TResult =
   }
 
   /**
+   * Like {@link Pool.map}, but fault-tolerant: a task that throws becomes a
+   * `rejected` entry instead of failing the whole batch. Resolves to one
+   * {@link SettledResult} per input, in order — the worker-thread analogue of
+   * `Promise.allSettled`.
+   *
+   * Only a task's *own* failure is recorded; an `AbortSignal` firing or the pool
+   * being terminated still rejects the returned promise (those cancel everything).
+   *
+   * @example
+   * ```ts
+   * const results = await pool.mapSettled(urls);
+   * const ok = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+   * ```
+   */
+  mapSettled(args: ReadonlyArray<TArg>, options?: RunOptions): Promise<SettledResult<TResult>[]> {
+    return Promise.all(args.map((arg) => settle(() => this.run(arg, options))));
+  }
+
+  /**
    * Stream inputs through the pool as an async iterator, yielding each result as
    * it's ready instead of buffering them all.
    *
@@ -210,15 +230,52 @@ export class Pool<TEvents extends EventMap = EventMap, TArg = unknown, TResult =
     items: StreamInput<TArg>,
     options: StreamOptions = {},
   ): AsyncGenerator<TResult, void, void> {
-    const concurrency = Math.max(1, Math.min(options.concurrency ?? this.size, this.size));
-    const ordered = options.ordered ?? true;
-    const { signal, timeout, retry } = options;
-    const callOptions = signal || timeout || retry ? { signal, timeout, retry } : undefined;
+    const { concurrency, ordered, signal, callOptions } = this.streamConfig(options);
     return streamResults<TArg, TResult>(items, (arg) => this.run(arg, callOptions), {
       concurrency,
       ordered,
       signal,
     });
+  }
+
+  /**
+   * Fault-tolerant {@link Pool.stream}: yields one {@link SettledResult} per
+   * input — a task that throws becomes a `rejected` entry instead of ending the
+   * stream. Only an `AbortSignal` or pool teardown stops it. Same lazy pull,
+   * bounded memory, and ordering options as {@link Pool.stream}.
+   *
+   * @example
+   * ```ts
+   * for await (const r of pool.streamSettled(items)) {
+   *   if (r.status === 'fulfilled') save(r.value);
+   *   else log(r.reason);
+   * }
+   * ```
+   */
+  streamSettled(
+    items: StreamInput<TArg>,
+    options: StreamOptions = {},
+  ): AsyncGenerator<SettledResult<TResult>, void, void> {
+    const { concurrency, ordered, signal, callOptions } = this.streamConfig(options);
+    return streamResults<TArg, SettledResult<TResult>>(
+      items,
+      (arg) => settle(() => this.run(arg, callOptions)),
+      { concurrency, ordered, signal },
+    );
+  }
+
+  /** Shared option handling for {@link Pool.stream} / {@link Pool.streamSettled}. */
+  private streamConfig(options: StreamOptions): {
+    concurrency: number;
+    ordered: boolean;
+    signal: AbortSignal | undefined;
+    callOptions: RunOptions | undefined;
+  } {
+    const concurrency = Math.max(1, Math.min(options.concurrency ?? this.size, this.size));
+    const ordered = options.ordered ?? true;
+    const { signal, timeout, retry } = options;
+    const callOptions = signal || timeout || retry ? { signal, timeout, retry } : undefined;
+    return { concurrency, ordered, signal, callOptions };
   }
 
   /** Terminate every worker. Pending tasks are rejected with a {@link TerminatedError}. */
@@ -254,8 +311,20 @@ export class Pool<TEvents extends EventMap = EventMap, TArg = unknown, TResult =
           },
         )
         .finally(() => {
-          if (!this.terminated) {
+          if (this.terminated) return;
+          if (!worker.isTerminated) {
+            // Healthy worker — return it to rotation.
             this.idle.push(worker);
+            this.drain();
+          } else if (this.workers.every((w) => w.isTerminated)) {
+            // The worker crashed and none are left alive — don't strand the queue.
+            const pending = this.queue.splice(0);
+            for (const queued of pending) {
+              queued.cleanup?.();
+              queued.reject(new WorkerExitedError());
+            }
+          } else {
+            // A worker crashed but others remain — keep draining onto them.
             this.drain();
           }
         });

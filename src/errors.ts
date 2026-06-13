@@ -36,3 +36,21 @@ export class TerminatedError extends HurriedError {
     this.name = 'TerminatedError';
   }
 }
+
+/**
+ * A worker exited on its own — a crash, `process.exit()` in task code, an OOM,
+ * or a fatal uncaught error — rather than being torn down by `terminate()`.
+ * Kept distinct from {@link TerminatedError} so fault-tolerant batches can treat
+ * a dead worker as a recoverable per-item failure instead of a deliberate stop.
+ */
+export class WorkerExitedError extends HurriedError {
+  /** The worker's exit code, when the runtime reported one. */
+  readonly code?: number;
+  constructor(code?: number) {
+    super(
+      code != null ? `Worker exited unexpectedly (code ${code})` : 'Worker exited unexpectedly',
+    );
+    this.name = 'WorkerExitedError';
+    this.code = code;
+  }
+}

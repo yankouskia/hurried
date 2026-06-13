@@ -40,6 +40,16 @@ Run the task across every input. Inputs preserve order in the output.
 map(args: ReadonlyArray<TArg>, options?: RunOptions): Promise<TResult[]>;
 ```
 
+### `pool.mapSettled(args, options?)`
+
+Fault-tolerant `map`: resolves to one `SettledResult` per input (in order) instead of rejecting on the first failure.
+
+```ts
+mapSettled(args: ReadonlyArray<TArg>, options?: RunOptions): Promise<SettledResult<TResult>[]>;
+```
+
+Only a task's own failure is recorded; an `AbortSignal` or pool teardown still rejects the returned promise. See the [Fault tolerance guide](../guides/settled).
+
 ### `pool.stream(items, options?)`
 
 Stream inputs through the pool as an async iterator, yielding each result as it's ready instead of buffering them all.
@@ -60,6 +70,17 @@ for await (const result of pool.stream(urls, { ordered: false })) {
 ```
 
 See the [Streaming guide](../guides/streaming) for ordered vs as-completed, backpressure, and cancellation.
+
+### `pool.streamSettled(items, options?)`
+
+Fault-tolerant `stream`: yields one `SettledResult` per input as it's ready — a task that throws becomes a `rejected` entry instead of ending the stream. Same lazy pull, bounded memory, and ordering options as `pool.stream`.
+
+```ts
+streamSettled(
+  items: Iterable<TArg> | AsyncIterable<TArg>,
+  options?: StreamOptions,
+): AsyncGenerator<SettledResult<TResult>, void, void>;
+```
 
 ### `pool.on / once / off / emit / bus()`
 

@@ -27,6 +27,7 @@ That's it. Type-safe `run()`, automatic worker lifecycle, real Promise.
 - **Parallel helpers** — `parallel()` and `mapParallel()` for fire-and-forget concurrency.
 - **Streaming iterators** — `mapParallelStream()` / `pool.stream()` yield results as they're ready, with bounded memory over huge or infinite sources.
 - **Retry with backoff** — `{ retry: 3 }` on any call, with exponential delay, jitter, and a custom retry predicate.
+- **Fault-tolerant batches** — `mapParallelSettled()` & friends return a `SettledResult` per item, so one failure doesn't sink the run.
 - **AbortSignal + timeouts** on every primitive.
 - **Structured errors** — `TaskError`, `TaskTimeoutError`, `TaskAbortedError`, `TerminatedError`.
 - **Dual ESM + CJS** with generated `.d.ts`. Zero runtime dependencies.
