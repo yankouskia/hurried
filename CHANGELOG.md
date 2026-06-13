@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-06-13
+
+Feature release — fully backward compatible. Drop-in upgrade from 2.2.0.
+
+### Added
+
+- **Fault-tolerant batches (`Promise.allSettled` for workers).** Every map/stream
+  helper gains a settled twin that records a per-item outcome instead of failing
+  the whole run on the first error:
+  - `mapParallelSettled(items, task, options?)` and `pool.mapSettled(args, options?)`
+    resolve to one `SettledResult<T>` (`{ status: 'fulfilled', value }` or
+    `{ status: 'rejected', reason }`) per input, in order.
+  - `mapParallelStreamSettled(...)` and `pool.streamSettled(...)` stream those
+    settled results with the same lazy pull and bounded memory as the streaming APIs.
+  - New `SettledResult` type exported. Composes with `retry` — only the final,
+    post-retry failure is recorded.
+- **`WorkerExitedError`.** A worker that exits on its own (a crash, `process.exit()`
+  in task code, an OOM) now rejects with this dedicated error instead of
+  `TerminatedError`, which is reserved for a deliberate `terminate()`. This lets the
+  settled helpers treat a dead worker as a recoverable per-item failure rather than
+  a stop-everything signal.
+
+### Changed
+
+- **Pools survive a worker crash.** A worker that exits unexpectedly is dropped from
+  rotation instead of being handed more work; remaining tasks continue on the healthy
+  workers, and queued work is only failed if the entire pool is gone.
+
+### Security
+
+- Bumped `vitest` to `3.2.6` and overrode `esbuild` to `^0.28.1` (dev/test
+  toolchain) and `joi` to `^18.2.1` (docs site), clearing all open advisories.
+  `npm audit` reports **0 vulnerabilities**. The published library has zero runtime
+  dependencies and is unaffected.
+
 ## [2.2.0] - 2026-05-23
 
 Feature release — fully backward compatible. Drop-in upgrade from 2.1.0.
@@ -134,6 +169,7 @@ API and production-ready primitives.
 
 Initial public release. See git history for details.
 
+[2.3.0]: https://github.com/yankouskia/hurried/releases/tag/v2.3.0
 [2.2.0]: https://github.com/yankouskia/hurried/releases/tag/v2.2.0
 [2.1.0]: https://github.com/yankouskia/hurried/releases/tag/v2.1.0
 [2.0.2]: https://github.com/yankouskia/hurried/releases/tag/v2.0.2
